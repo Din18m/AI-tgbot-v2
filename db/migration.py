@@ -23,34 +23,39 @@ def migration_up():
     conn = db_connection()
     cur = conn.cursor()
     try:
-        create = sql.SQL("""CREATE TABLE IF NOT EXISTS teacher
+        create = sql.SQL("""CREATE TABLE IF NOT EXISTS teachers
 (
     id          bigint NOT NULL PRIMARY KEY,
+    nickname varchar,
     name        varchar,
     grade       varchar,
     sphere      varchar,
     description varchar,
     show        bool default true,
-    nickname varchar
+    cnt_window int,
+    cnt_came int,
+    cnt_pass int
 );
 
-CREATE TABLE if not exists teacher_student(
-id_teacher int,
-id_student int,
-nick_student varchar,
-nick_teacher varchar
-);
-
-
-CREATE TABLE IF NOT EXISTS student
+CREATE TABLE IF NOT EXISTS students
 (
     id          bigint NOT NULL PRIMARY KEY,
+    nickname    varchar,
     name        varchar,
     grade       varchar,
     sphere      varchar,
     description varchar,
-    show        bool default true,
-    nickname    varchar
+    cnt_came int,
+    cnt_pass int
+);
+
+CREATE TABLE IF NOT EXISTS windows
+(
+    id serial not null primary key,
+    id_teacher bigint not null,
+    time timestamp,
+    description varchar(23),
+    id_student bigint default null,
 );
         """)
 
@@ -68,7 +73,7 @@ def migration_down():
     conn = db_connection()
     cur = conn.cursor()
     try:
-        drop = sql.SQL("""DROP TABLE IF EXISTS teacher, student;""")
+        drop = sql.SQL("""DROP TABLE IF EXISTS teachers, students, windows;""")
 
         cur.execute(drop)  # Выполняем запрос на создание таблицы
         conn.commit()
