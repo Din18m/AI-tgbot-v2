@@ -32,9 +32,9 @@ def migration_up():
     sphere      varchar,
     description varchar,
     show        bool default true,
-    cnt_window int,
-    cnt_came int,
-    cnt_pass int
+    cnt_window int default 0,
+    cnt_came int default 0,
+    cnt_pass int default 0
 );
 
 CREATE TABLE IF NOT EXISTS students
@@ -45,8 +45,9 @@ CREATE TABLE IF NOT EXISTS students
     grade       varchar,
     sphere      varchar,
     description varchar,
-    cnt_came int,
-    cnt_pass int
+    cnt_came int default 0,
+    cnt_pass int default 0,
+    cnt_cancel int default 0
 );
 
 CREATE TABLE IF NOT EXISTS windows
@@ -55,7 +56,7 @@ CREATE TABLE IF NOT EXISTS windows
     id_teacher bigint not null,
     time timestamp,
     description varchar(23),
-    id_student bigint default null,
+    id_student bigint default null
 );
         """)
 
