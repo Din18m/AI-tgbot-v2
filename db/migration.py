@@ -31,7 +31,7 @@ def migration_up():
     grade       varchar,
     sphere      varchar,
     description varchar,
-    show        bool default true,
+    show        bool default false,
     cnt_window int default 0,
     cnt_came int default 0,
     cnt_pass int default 0
