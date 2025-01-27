@@ -3,14 +3,23 @@
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-#
-# def starting_kb() -> InlineKeyboardMarkup:
-#     buttons = [
-#         [InlineKeyboardButton(text="student", callback_data="info")],
-#         [InlineKeyboardButton(text="teacher", callback_data="teacher")],
-#     ]
-#     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-#     return keyboard
+
+def start_teacher_kb() -> InlineKeyboardMarkup:
+    kb = [
+        [
+            InlineKeyboardButton(text="Изменить анкету", callback_data="teacher"),
+        ],
+        [
+            InlineKeyboardButton(text="⚙️ Настройки календаря", callback_data="setting_teacher"),
+        ],
+        [
+            InlineKeyboardButton(text="Полученные приглашения", callback_data="my_students_teacher"),
+        ],
+        [InlineKeyboardButton(text="Вернуться", callback_data="return_to_start")]
+    ]
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
+    return keyboard
 
 
 def info_and_continue_kb() -> InlineKeyboardMarkup:

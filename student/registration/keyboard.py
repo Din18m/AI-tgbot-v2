@@ -3,7 +3,7 @@
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from student.search.filters import NoneData
+from const import NoneData
 
 
 def registration_kb() -> InlineKeyboardMarkup:

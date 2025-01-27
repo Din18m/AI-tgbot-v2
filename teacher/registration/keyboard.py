@@ -3,7 +3,7 @@
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from config import NoneData
+from const import NoneData
 
 
 def sphere_teacher() -> InlineKeyboardMarkup:
