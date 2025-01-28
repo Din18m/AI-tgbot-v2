@@ -19,7 +19,7 @@ from config import dp, bot
 
 import teacher.registration.registration
 import teacher.calendar.calendar
-# import teacher.mystudent.mystudent
+import teacher.requests.requests
 
 import start.start
 

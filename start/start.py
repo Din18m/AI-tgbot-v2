@@ -19,7 +19,9 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
         kb = [
             [
                 InlineKeyboardButton(text="Регистрация", callback_data="teacher"),
-            ]]
+                InlineKeyboardButton(text="Вернуться", callback_data="return_to_start"),
+            ]
+        ]
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
         await callback_query.message.edit_text("Здраствуйте, сначала пройдите регистрацию", reply_markup=keyboard)

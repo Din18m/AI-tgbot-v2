@@ -5,6 +5,7 @@ from psycopg2 import sql
 
 import config
 import teacher.model
+from teacher import notify
 
 db_config = {
     'dbname': config.DB_NAME,
@@ -215,7 +216,7 @@ def get_all_window(id_teacher: int):
 
         rows = cursor.fetchall()
 
-        window = [{"time": row[0], "description": row[1], "id": row[2], "student":row[3]} for row in rows]
+        window = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
 
         return window
 
@@ -266,3 +267,56 @@ def delete_window(id: int):
         if connection:
             cursor.close()
             connection.close()
+
+
+def get_requests(id_teacher: int):
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        request = sql.SQL("""
+            SELECT id, id_window, id_student FROM requests WHERE id_teacher = %s
+            """)
+        cursor.execute(request, (id_teacher,))
+
+        rows = cursor.fetchall()
+
+        request = [{"id": row[0], "window": row[1], "student": row[2]} for row in rows]
+        free_request = []
+        for elem in request:
+            window = sql.SQL("""
+                       SELECT id, time, description, id_student FROM windows WHERE id = %s
+                       """)
+            cursor.execute(window, (elem["window"],))
+
+            row = cursor.fetchone()
+
+            window = {"id": row[0], "time": row[1], "description": row[2], "student": row[3]}
+            elem["window"] = window
+            if window["student"] is not None and window["student"] != elem["student"]:
+                notify.dislike(elem["student"], id_teacher, window)
+                continue
+            if window["student"] == elem["student"]:
+                continue
+            elem["window"] = window
+            student = sql.SQL("""
+                SELECT id, nickname, name, grade, sphere, description, cnt_came, cnt_pass, cnt_cancel FROM students WHERE id = %s
+                """)
+            cursor.execute(student, (elem["student"],))
+            row = cursor.fetchone()
+            student = {"id": row[0], "nickname": row[1], "name": row[2], "grade": row[3], "sphere": row[4],
+                       "description": row[5], "cnt_came": row[6], "cnt_pass": row[7], "cnt_cancel": row[8]}
+            elem["student"] = student
+            free_request.append(elem)
+
+        return free_request
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+def check_free_window(id:int) ->bool:
+    return True

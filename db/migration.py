@@ -58,6 +58,15 @@ CREATE TABLE IF NOT EXISTS windows
     description varchar(23),
     id_student bigint default null
 );
+create table if not exists requests
+(
+    id serial not null primary key,
+    id_window int,
+    id_teacher int,
+    id_student int
+);
+
+
         """)
 
         cur.execute(create)  # Выполняем запрос на создание таблицы

@@ -56,7 +56,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
         text.append(
             f"{i + 1}) {windows[i]["time"].strftime('%d.%m')} "
             f"{windows[i]["time"].strftime('%H:%M')} {windows[i]['description']}")
-    await state.update_data(ids=ids)
+    await state.update_data(ids=ids, text=text)
     await callback.message.edit_text("удалите свободные окна \n" + "\n".join(text),
                                      reply_markup=kb.delete_setting_teacher(len(windows)))
 
@@ -66,7 +66,16 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     id = callback.data.split("_")[0]
     info = await state.get_data()
     ids = info["ids"]
-    delete_window(ids[int(id) - 1])
+    text = info["text"]
+    await state.update_data(delete=ids[int(id) - 1])
+    await callback.message.edit_text("Вы уверены что хотите удалить окно \n" + text[int(id)-1],
+                                     reply_markup=kb.sure())
+
+@dp.callback_query(lambda query: query.data==("delete_now_calendar_teacher"))
+async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
+    info = await state.get_data()
+    delete = info["delete"]
+    delete_window(delete)
     windows = get_free_window(callback.from_user.id)
     if len(windows) == 0:
         await callback.message.edit_text("у вас нет свободных окон для удаления\nСоздать окно\nУдалить "
@@ -80,7 +89,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
         text.append(
             f"{i + 1}) {windows[i]["time"].strftime('%d.%m')} "
             f"{windows[i]["time"].strftime('%H:%M')} {windows[i]['description']}")
-    await state.update_data(ids=ids)
+    await state.update_data(ids=ids, text=text)
     await callback.message.edit_text("удалите свободные окна \n" + "\n".join(text),
                                      reply_markup=kb.delete_setting_teacher(len(windows)))
 
@@ -137,9 +146,19 @@ async def day_teacher(callback: CallbackQuery, state: FSMContext):
         reply_markup=kb.cancel_setting_teacher())
 
 
-@dp.message(StateFilter(CalendarTeacher.time))
+
 @dp.callback_query(lambda query: query.data == "time_ret_calendar")
-async def time_tiacher(message: Message, state: FSMContext):
+async def time_ret_teacher(callback: CallbackQuery, state: FSMContext):
+    info = await state.get_data()
+    call = info["call"]
+    data = info["date"]
+    await state.set_state(CalendarTeacher.time)
+    await call.message.edit_text(
+        text=f"Введите время, в которое вы проведете собеседование {data} числа в формате hh:mm",
+        reply_markup=kb.cancel_setting_teacher())
+
+@dp.message(StateFilter(CalendarTeacher.time))
+async def time_teacher(message: Message, state: FSMContext):
     time = message.text
     info = await state.get_data()
     call = info["call"]
@@ -157,7 +176,7 @@ async def time_tiacher(message: Message, state: FSMContext):
                                 h=h, m=m)
         await state.set_state(CalendarTeacher.description)
         await call.message.edit_text(
-            f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {h}:{m}",
+            f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} ",
             reply_markup=kb.cancel_setting_teacher())
     except Exception:
         await call.message.edit_text(
@@ -166,8 +185,20 @@ async def time_tiacher(message: Message, state: FSMContext):
             reply_markup=kb.cancel_setting_teacher())
 
 
-@dp.message(StateFilter(CalendarTeacher.description))
 @dp.callback_query(lambda query: query.data == "description_ret_calendar")
+async def time_ret_teacher(callback: CallbackQuery, state: FSMContext):
+    info = await state.get_data()
+    call = info["call"]
+    data = info["date"]
+    h = info["h"]
+    m = info["m"]
+    await state.set_state(CalendarTeacher.description)
+    await call.message.edit_text(
+        f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} ",
+        reply_markup=kb.cancel_setting_teacher())
+
+
+@dp.message(StateFilter(CalendarTeacher.description))
 async def time_tiacher(message: Message, state: FSMContext):
     desc = message.text
     info = await state.get_data()
@@ -183,12 +214,12 @@ async def time_tiacher(message: Message, state: FSMContext):
         await state.set_state(CalendarTeacher.finish)
         await call.message.edit_text(
             f"Проверьте правильность и сохраните, иначе вернитесь и измените начиная с неправильного пункта\n"
-            f"{data} в {h}:{m} {desc}",
+            f"{data} в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} {desc}",
             reply_markup=kb.check())
     except Exception:
         await call.message.edit_text(
             text=f"превышение размера текста\n"
-                 + f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {h}:{m}",
+                 + f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")}",
             reply_markup=kb.cancel_setting_teacher())
 
 
