@@ -90,7 +90,6 @@ def add_user(usr: teacher.model.Teacher):
                 usr.grade,
                 usr.sphere,
                 usr.description,
-                usr.show,
                 usr.nickname
             ))
 
