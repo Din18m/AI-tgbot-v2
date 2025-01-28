@@ -1,8 +1,11 @@
+from datetime import datetime
+
 import psycopg2
 from psycopg2 import sql
 
 import config
 import teacher.model
+from teacher import notify
 
 db_config = {
     'dbname': config.DB_NAME,
@@ -25,11 +28,9 @@ def check_id(user_id: int) -> (teacher.model.Teacher, int):
         check_query = sql.SQL("SELECT EXISTS (SELECT 1 FROM teachers WHERE id = %s)")
         cursor.execute(check_query, (user_id,))
         exists = cursor.fetchone()[0]
-        TMP = sql.SQL("SELECT * from teachers WHERE id = %s")
-        cursor.execute(TMP, (user_id,))
         if exists:
             # Если пользователь существует, извлекаем информацию
-            get_all_query = sql.SQL("SELECT * FROM teachers WHERE id = %s")
+            get_all_query = sql.SQL("SELECT id, name, grade, sphere, description, nickname FROM teachers WHERE id = %s")
             cursor.execute(get_all_query, (user_id,))
             rows = cursor.fetchone()
             user = teacher.model.Teacher(
@@ -38,8 +39,7 @@ def check_id(user_id: int) -> (teacher.model.Teacher, int):
                 grade=rows[2],
                 sphere=rows[3],
                 description=rows[4],
-                show=rows[5],
-                nickname=rows[6],
+                nickname=rows[5],
             )
             return user, 1
         else:
@@ -65,8 +65,8 @@ def add_user(usr: teacher.model.Teacher):
         if i == 1:  # Пользователь уже существует
             # Обновляем данные пользователя
             update_query = sql.SQL("""
-                UPDATE teacher 
-                SET  name = %s, grade = %s, sphere = %s, description = %s, show = %s, nickname = %s
+                UPDATE teachers 
+                SET  name = %s, grade = %s, sphere = %s, description = %s, nickname = %s
                 WHERE id = %s
             """)
             cursor.execute(update_query, (
@@ -74,7 +74,6 @@ def add_user(usr: teacher.model.Teacher):
                 usr.grade,
                 usr.sphere,
                 usr.description,
-                usr.show,
                 usr.nickname,
                 usr.id,
             ))
@@ -82,8 +81,8 @@ def add_user(usr: teacher.model.Teacher):
         elif i == 0:  # Пользователь новый
             # Добавляем нового пользователя
             insert_query = sql.SQL("""
-                INSERT INTO teacher (id, name, grade, sphere, description, show, nickname)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO teachers (id, name, grade, sphere, description, nickname)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """)
             cursor.execute(insert_query, (
                 usr.id,
@@ -115,7 +114,7 @@ def change_show(user_id: int, show: bool):
     cursor = connection.cursor()
     try:
         update_query = sql.SQL("""
-                UPDATE teacher 
+                UPDATE teachers
                 SET show = %s
                 WHERE id = %s
             """)
@@ -133,28 +132,18 @@ def change_show(user_id: int, show: bool):
             connection.close()
 
 
-async def get_all_data_all_student(id_teacher: int):
+def get_cnt_windows(teacher_id: int):
     connection = db_connection()
     cursor = connection.cursor()
     try:
-        get_all_student_query = sql.SQL("""SELECT id,  name, grade, sphere, description, nickname
-FROM student  
-WHERE id != %s and EXISTS  (
-    SELECT 1 
-    FROM teacher_student 
-    WHERE student.id = teacher_student.id_student
-    and teacher_student.id_teacher = %s
-    AND teacher_student.id_student != teacher_student.id_teacher
-)""")
-        cursor.execute(get_all_student_query, (id_teacher, id_teacher,))
+        window = sql.SQL("""
+            SELECT cnt_window FROM teachers WHERE id = %s
+            """)
+        cursor.execute(window, (teacher_id,))
+        row = cursor.fetchone()
+        cnt_wind = row[0]
 
-        rows = cursor.fetchall()
-        user_info = [
-            {"id": row[0], "name": row[1], "grade": row[2], "sphere": row[3], "bio": row[4], "nickname": row[5]}
-            for row in rows
-        ]
-
-        return user_info
+        return cnt_wind
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
@@ -164,29 +153,50 @@ WHERE id != %s and EXISTS  (
             connection.close()
 
 
-async def get_all_student(id_teacher: int):
+def add_new_window(id_teacher: int, time: datetime, description: str):
     connection = db_connection()
     cursor = connection.cursor()
     try:
-        get_all_student_query = sql.SQL("""SELECT id,  name, grade, sphere, description, nickname
-FROM student 
-WHERE show = true AND 
-id != %s
-and NOT EXISTS (
-    SELECT 1 
-    FROM teacher_student 
-    WHERE student.id = teacher_student.id_student
-    and teacher_student.id_teacher = %s
-    AND teacher_student.id_student != teacher_student.id_teacher
-)""")
-        cursor.execute(get_all_student_query, (id_teacher, id_teacher,))
-        rows = cursor.fetchall()
-        user_info = [
-            {"id": row[0], "name": row[1], "grade": row[2], "sphere": row[3], "bio": row[4], "nickname": row[5]}
-            for row in rows
-        ]
+        insert_query = sql.SQL("""
+                        INSERT INTO windows (id_teacher, time, description) VALUES (%s, %s, %s); 
+                    """)
+        cursor.execute(insert_query, (
+            id_teacher, time, description
+        ))
+        cnt_wind = get_cnt_windows(id_teacher)
+        update_query = sql.SQL("""
+                            UPDATE teachers
+                            SET cnt_window = %s, show = true
+                            WHERE id = %s
+                        """)
+        cursor.execute(update_query, (
+            cnt_wind + 1, id_teacher
+        ))
+        cursor.connection.commit()
+        return True
+    except (Exception, psycopg2.DatabaseError) as error:
+        return False
 
-        return user_info
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+def get_free_window(id_teacher: int):
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        window = sql.SQL("""
+            SELECT time, description, id FROM windows WHERE id_teacher = %s and id_student IS NULL
+            """)
+        cursor.execute(window, (id_teacher,))
+
+        rows = cursor.fetchall()
+
+        window = [{"time": row[0], "description": row[1], "id": row[2]} for row in rows]
+
+        return window
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
@@ -195,21 +205,21 @@ and NOT EXISTS (
             cursor.close()
             connection.close()
 
-async def get_one_student(id_student: int):
+
+def get_all_window(id_teacher: int):
     connection = db_connection()
     cursor = connection.cursor()
     try:
-        get_all_student_query = sql.SQL("""SELECT id,  name, grade, sphere, description, nickname
-FROM student 
-WHERE id = %s""")
-        cursor.execute(get_all_student_query, (id_student,))
-        rows = cursor.fetchall()
-        user_info = [
-            {"id": row[0], "name": row[1], "grade": row[2], "sphere": row[3], "bio": row[4], "nickname": row[5]}
-            for row in rows
-        ]
+        window = sql.SQL("""
+            SELECT time, description, id, id_student FROM windows WHERE id_teacher = %s
+            """)
+        cursor.execute(window, (id_teacher,))
 
-        return user_info
+        rows = cursor.fetchall()
+
+        window = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
+
+        return window
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
@@ -219,56 +229,95 @@ WHERE id = %s""")
             connection.close()
 
 
-
-all_grades = ["No_work", "Intern", "Junior", "Middle", "Senior"]
-all_spheres = ["NLP", "CV", "RecSys", "Audio", "Classic_ML", "Any"]
-
-
-async def get_filter_students(grade, sphere, teacher_id):
+def delete_window(id: int):
     connection = db_connection()
     cursor = connection.cursor()
-
     try:
-        fstudents_query = sql.SQL("""
-        SELECT name, grade, sphere, description, id FROM student 
-        WHERE 
-        grade similar to %s and
-        sphere similar to %s and
-        show = true AND
-        id != %s
-        and NOT EXISTS (
-    SELECT 1 
-    FROM teacher_student 
-    WHERE student.id = teacher_student.id_student
-    and teacher_student.id_teacher = %s
-    AND teacher_student.id_student != teacher_student.id_teacher
-)""")
-        if not grade and sphere:
-            cursor.execute(fstudents_query,
-                           ("%(" + "|".join(all_grades) + ")%", "%(" + "|".join(sphere.split(", ")) + ")%",
-                            teacher_id, teacher_id,), )
-        elif not sphere and grade:
-            cursor.execute(fstudents_query,
-                           ("%(" + "|".join(grade.split(", ")) + ")%", "%(" + "|".join(all_spheres) + ")%",
-                            teacher_id, teacher_id,), )
-        elif not grade and not sphere:
-            cursor.execute(fstudents_query, ("%(" + "|".join(all_grades) + ")%", "%(" + "|".join(all_spheres) + ")%",
-                                             teacher_id, teacher_id,), )
+        window = sql.SQL("""
+            SELECT id_teacher FROM windows WHERE id = %s
+            """)
+        cursor.execute(window, (id,))
+
+        id_teacher = cursor.fetchone()[0]
+
+        insert_query = sql.SQL("""delete FROM windows WHERE id = %s """)
+        cursor.execute(insert_query, (id,))
+        cnt_wind = get_cnt_windows(id_teacher)
+        if cnt_wind == 1:
+            update_query = sql.SQL("""
+                                    UPDATE teachers
+                                    SET cnt_window = %s, show = false
+                                    WHERE id = %s
+                                """)
         else:
-            cursor.execute(fstudents_query,
-                           ("%(" + "|".join(grade.split(", ")) + ")%", "%(" + "|".join(sphere.split(", ")) + ")%",
-                            teacher_id, teacher_id,), )
-        rows = cursor.fetchmany(size=4)
-        user_info = [
-            {"name": row[0], "grade": row[1], "sphere": row[2], "bio": row[3], "id": row[4]}
-            for row in rows
-        ]
-        return user_info
+            update_query = sql.SQL("""
+                                    UPDATE teachers
+                                    SET cnt_window = %s, show = true
+                                    WHERE id = %s
+                                """)
+
+        cursor.execute(update_query, (
+            cnt_wind - 1, id_teacher
+        ))
+        cursor.connection.commit()
+        return True
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
-
     finally:
         if connection:
             cursor.close()
             connection.close()
+
+
+def get_requests(id_teacher: int):
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        request = sql.SQL("""
+            SELECT id, id_window, id_student FROM requests WHERE id_teacher = %s
+            """)
+        cursor.execute(request, (id_teacher,))
+
+        rows = cursor.fetchall()
+
+        request = [{"id": row[0], "window": row[1], "student": row[2]} for row in rows]
+        free_request = []
+        for elem in request:
+            window = sql.SQL("""
+                       SELECT id, time, description, id_student FROM windows WHERE id = %s
+                       """)
+            cursor.execute(window, (elem["window"],))
+
+            row = cursor.fetchone()
+
+            window = {"id": row[0], "time": row[1], "description": row[2], "student": row[3]}
+            elem["window"] = window
+            if window["student"] is not None and window["student"] != elem["student"]:
+                notify.dislike(elem["student"], id_teacher, window)
+                continue
+            if window["student"] == elem["student"]:
+                continue
+            elem["window"] = window
+            student = sql.SQL("""
+                SELECT id, nickname, name, grade, sphere, description, cnt_came, cnt_pass, cnt_cancel FROM students WHERE id = %s
+                """)
+            cursor.execute(student, (elem["student"],))
+            row = cursor.fetchone()
+            student = {"id": row[0], "nickname": row[1], "name": row[2], "grade": row[3], "sphere": row[4],
+                       "description": row[5], "cnt_came": row[6], "cnt_pass": row[7], "cnt_cancel": row[8]}
+            elem["student"] = student
+            free_request.append(elem)
+
+        return free_request
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+def check_free_window(id:int) ->bool:
+    return True

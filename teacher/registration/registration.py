@@ -1,21 +1,17 @@
 """Реализация регистрации"""
 from aiogram.filters import StateFilter
-# \registration
-# 0) Учитель/ученик/both
-# 1) Имя
-# 2) Грейд: no_work, intern, junior, middle. senior
-# 3) Сфера: NLP, CV,RecSys, Audio, Classic ML, любой
-# 4) Текстовое описание себя
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, Message
 
 import teacher.model
 from db.db_teacher import check_id, add_user
 
 import teacher.registration.keyboard as kb
 # from main import dp
-from config import TOKEN_TG, dp, bot, router, NoneData
+from config import TOKEN_TG, dp, bot, router
+from const import NoneData, YourData, YourForm
+from start import keyboard as kbs
 
 
 class RegistrateTeacher(StatesGroup):
@@ -24,16 +20,6 @@ class RegistrateTeacher(StatesGroup):
     sphere = State()
     description = State()
     wait = State()
-
-
-DATA = """
-Ваши данные
-Имя: {}
-Уровень: {}
-Сфера: {}
-Описание: 
-{}
-"""
 
 
 async def do_text(state: FSMContext):
@@ -46,10 +32,10 @@ async def do_text(state: FSMContext):
     if n != NoneData and g != NoneData and d != NoneData and sp != NoneData:
         await call.message.edit_text(text="Проверьте введенные данные и если все "
                                           "верно нажмите на соответсвующую кнопку \n\n" +
-                                          DATA.format(n, g, sp, d),
+                                          YourData.format(n, g, sp, d),
                                      reply_markup=kb.reg_teacher_okay())
     else:
-        await call.message.edit_text(DATA.format(n, g, sp, d),
+        await call.message.edit_text(YourData.format(n, g, sp, d),
                                      reply_markup=kb.reg_teacher(n, g, sp, d))
 
 
@@ -98,10 +84,12 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
     user_data = await state.get_data()
     s = user_data['sphere']
     if s == NoneData:
-        await callback_query.message.edit_text("Выберите сферы AI, в которых вы специализируетесь", reply_markup=kb.sphere_teacher())
-    else:
-        await callback_query.message.edit_text("Выбрано: " + s + "\nВыберите дополнительно или нажмите повторно чтобы убрать",
+        await callback_query.message.edit_text("Выберите сферы AI, в которых вы специализируетесь",
                                                reply_markup=kb.sphere_teacher())
+    else:
+        await callback_query.message.edit_text(
+            "Выбрано: " + s + "\nВыберите дополнительно или нажмите повторно чтобы убрать",
+            reply_markup=kb.sphere_teacher())
     await state.set_state(RegistrateTeacher.sphere)
 
 
@@ -118,14 +106,16 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
     else:
         tt = s + ", " + tt
         await state.update_data(sphere=tt)
-    await callback_query.message.edit_text(text="Выбрано: " + tt + "\nВыберите дополнительно или нажмите повторно чтобы убрать",
-                                           reply_markup=kb.sphere_teacher())
+    await callback_query.message.edit_text(
+        text="Выбрано: " + tt + "\nВыберите дополнительно или нажмите повторно чтобы убрать",
+        reply_markup=kb.sphere_teacher())
     await state.set_state(RegistrateTeacher.wait)
 
 
 @dp.callback_query(lambda c: c.data == "description_teacher")
 async def process_callback(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.message.edit_text("Расскажите немного о себе для вашего будущего собеседника", reply_markup=kb.reg_return_teacher())
+    await callback_query.message.edit_text("Расскажите немного о себе для вашего будущего собеседника",
+                                           reply_markup=kb.reg_return_teacher())
     await state.set_state(RegistrateTeacher.description)
 
 
@@ -160,39 +150,9 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
         grade=g,
         sphere=sp,
         description=d,
-        show=True,
         nickname=callback_query.from_user.username
     )
     add_user(user)
-    kb = [
-        [
-            InlineKeyboardButton(text="Изменить анкету", callback_data="teacher"),
-        ],
-        [
-            InlineKeyboardButton(text="⚙️ Настройки", callback_data="setting_teacher"),
-        ],
-        [
-            InlineKeyboardButton(text="🔍 Поиск собеседника", callback_data="new_students_teacher"),
-        ],
-        [
-            InlineKeyboardButton(text="Люди которых вы хотите собеседовать", callback_data="my_students_teacher"),
-        ],
-        [
-            InlineKeyboardButton(text="Помощь", callback_data="help"),
-        ],
-        [InlineKeyboardButton(text="Вернуться", callback_data="return_to_start")]
-    ]
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
-    DATA = """
-Привет! Твоя анкета:
-
-Имя: {}
-Уровень: {}
-Сфера: {}
-Описание: 
-{}
-"""
     await callback_query.message.edit_text(
-        DATA.format(user.name, user.grade, user.sphere, user.description),
-        reply_markup=keyboard)
+        YourForm.format(user.name, user.grade, user.sphere, user.description),
+        reply_markup=kbs.start_teacher_kb())

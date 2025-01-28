@@ -90,13 +90,3 @@ def return_kb() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
-
-def info_and_continue_kb() -> InlineKeyboardMarkup:
-    buttons = [
-        [InlineKeyboardButton(text="Регистрация", callback_data="registration")],
-        [InlineKeyboardButton(text="Поиск", callback_data="cmd_go")],
-        [InlineKeyboardButton(text="Настройки календаря", callback_data="calendar")],
-        [InlineKeyboardButton(text="Вернуться к выбору роли", callback_data="return_to_start")]
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    return keyboard

@@ -8,8 +8,9 @@ from aiogram.types import CallbackQuery, Message
 
 from config import dp, bot
 from db.db_student import get_all_info, update_all, insert_all
+from start.keyboard import info_and_continue_kb
 from student.registration import keyboard as kb
-from const import NoneData, ALL_OKAY_TEXT
+from const import NoneData, ALL_OKAY_TEXT, DATA
 
 
 class Registration(StatesGroup):
@@ -152,5 +153,5 @@ async def end_reg(callback: CallbackQuery, state: FSMContext):
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
         text=ALL_OKAY_TEXT,
-        reply_markup=kb.info_and_continue_kb()
+        reply_markup=info_and_continue_kb()
     )

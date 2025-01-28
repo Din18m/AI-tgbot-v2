@@ -14,15 +14,11 @@ from config import dp, bot
 import student.registration.registration
 import student.search.search
 import student.search.filters
-# import student.setting.setting
-# import student.myteacher.myteacher
 import student.calendar.calendar
 
 import teacher.registration.registration
-import teacher.search.search
-import teacher.setting.setting
-import teacher.search.filters
-import teacher.mystudent.mystudent
+import teacher.calendar.calendar
+import teacher.requests.requests
 
 import start.start
 
