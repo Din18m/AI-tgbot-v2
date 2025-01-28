@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from config import dp
+from const import INFO_TEXT, HELLO, START_MESSAGE
 from db.db_student import  check_student_id
 from db.db_teacher import check_id
 from start.keyboard import info_and_continue_kb, student_registration_kb, starting_kb
@@ -40,23 +41,10 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
         ]
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
-        DATA = """
-                Привет! Твоя анкета:
-
-Имя: {}
-Уровень: {}
-Сфера: {}
-Описание: 
-{}
-"""
         await callback_query.message.edit_text(
-            DATA.format(user.name, user.grade, user.sphere, user.description),
+            HELLO.format(user.name, user.grade, user.sphere, user.description),
             reply_markup=keyboard)
 
-start_message = """Привет! Это бот от AI Knowledge Club для поиска собеседований и мок-интервью⚡️
-
-Выберите свою роль:
-"""
 
 @dp.callback_query(lambda c: c.data == "return_to_start")
 async def cmd_start(callback_query: CallbackQuery):
@@ -66,23 +54,13 @@ async def cmd_start(callback_query: CallbackQuery):
     ]
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
-    await callback_query.message.edit_text(start_message, reply_markup=keyboard)
+    await callback_query.message.edit_text(START_MESSAGE, reply_markup=keyboard)
 
-
-INFO_TEXT = """
-Вот список функций, которые вы можете использовать для поиска собеседований:
-
-⚙️ Регистрация/изменение данных - заполнить или изменить свою информацию.
-
-🔍 Поиск - поиск людей, с которыми можно пройти собеседование
-
-🗓 Настройки календаря - просмотр и отмена записей
-"""
 
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    await message.answer(start_message, reply_markup=starting_kb())
+    await message.answer(START_MESSAGE, reply_markup=starting_kb())
 
 
 
@@ -92,15 +70,7 @@ async def student_info(callback_query: CallbackQuery, state: FSMContext):
     if i == 0:
         await callback_query.message.edit_text("Здравствуйте, сначала пройдите регистрацию", reply_markup=student_registration_kb())
     else:
-        DATA = """
-                Привет! Твоя анкета:
-
-Имя: {}
-Уровень: {}
-Сфера: {}
-Описание: 
-{}
-""" + INFO_TEXT
+        DATA = HELLO + INFO_TEXT
         await callback_query.message.edit_text(
             DATA.format(user["name"], user["grade"], user["sphere"], user["description"]),
             reply_markup=info_and_continue_kb())

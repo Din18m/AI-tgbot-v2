@@ -5,6 +5,7 @@ import psycopg2
 from psycopg2 import sql
 
 import config
+from const import all_grades, all_spheres
 
 db_config = {
     'dbname': config.DB_NAME,
@@ -165,10 +166,6 @@ async def get_all_teachers(id_student: int) -> (list[dict], list):
         if connection:
             cursor.close()
             connection.close()
-
-
-all_grades = ["No_work", "Intern", "Junior", "Middle", "Senior"]
-all_spheres = ["NLP", "CV", "RecSys", "Audio", "Classic_ML", "Any"]
 
 
 async def get_filter_teachers(grade:str, sphere:str, id_student:int) -> (list[dict], list):

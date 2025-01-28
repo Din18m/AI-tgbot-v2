@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
-from const import TEACHER_DATA_sign_up, TEACHER_DATA
+from const import TEACHER_DATA_sign_up, TEACHER_DATA, FILTER_DATA
 from db.db_student import get_filter_teachers, get_all_teacher_windows, sign_up_student
 from student.search import keyboard as kb
 
@@ -21,14 +21,6 @@ class Filters(StatesGroup):
     sphere = State()
     wait = State()
 
-
-FILTER_DATA = """
-В данный момент выбраны фильтры:
-
-Уровень:   {}
-
-Сфера:   {}
-"""
 
 
 async def display_filters(state: FSMContext):

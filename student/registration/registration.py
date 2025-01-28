@@ -9,7 +9,8 @@ from aiogram.types import CallbackQuery, Message
 from config import dp, bot
 from db.db_student import get_all_info, update_all, insert_all
 from student.registration import keyboard as kb
-from const import NoneData
+from const import NoneData, ALL_OKAY_TEXT
+
 
 class Registration(StatesGroup):
     name = State()
@@ -18,15 +19,6 @@ class Registration(StatesGroup):
     bio = State()
     wait = State()
 
-
-DATA = """
-Ваши данные
-Имя: {}
-Уровень: {}
-Сфера: {}
-Описание: 
-{}
-"""
 
 
 async def display_student(state: FSMContext):
@@ -142,19 +134,6 @@ async def end_fill_bio(message: Message, state: FSMContext):
     await message.delete()
     await display_student(state)
     await state.set_state(Registration.wait)
-
-
-ALL_OKAY_TEXT = """
-Все изменения внесены
-    
-Вот список функций, которые вы можете использовать для поиска собеседований:
-
-⚙️ Регистрация/изменение данных - заполнить или изменить свою информацию.
-
-🔍 Поиск - поиск людей, с которыми можно пройти собеседование
-
-🗓 Настройки календаря - просмотр и отмена записей
-"""
 
 
 @dp.callback_query(lambda c: c.data == "all_is_okay")
