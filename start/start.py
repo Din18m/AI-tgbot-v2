@@ -5,10 +5,10 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from config import dp, bot
-from db.db_student import get_teacher_list
+from config import dp
+from db.db_student import  check_student_id
 from db.db_teacher import check_id
-import start.keyboard as kb
+from start.keyboard import info_and_continue_kb, student_registration_kb, starting_kb
 
 
 @dp.callback_query(lambda c: c.data == "start")
@@ -17,15 +17,15 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
     if i == 0:
         kb = [
             [
-                InlineKeyboardButton(text="Регистрация", callback_data="teacher"),
+                InlineKeyboardButton(text="Регистрация", callback_data="registration"),
             ]]
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
-        await callback_query.message.edit_text("Здраствуйте, сначала пройдите регистрацию", reply_markup=keyboard)
+        await callback_query.message.edit_text("Здравствуйте, сначала пройдите регистрацию", reply_markup=keyboard)
     else:
         kb = [
             [
-                InlineKeyboardButton(text="Изменить анкету", callback_data="teacher"),
+                InlineKeyboardButton(text="Изменить анкету", callback_data="registration"),
             ],
             [
                 InlineKeyboardButton(text="⚙️ Настройки", callback_data="setting_teacher"),
@@ -61,7 +61,7 @@ start_message = """Привет! Это бот от AI Knowledge Club для п�
 @dp.callback_query(lambda c: c.data == "return_to_start")
 async def cmd_start(callback_query: CallbackQuery):
     kb = [
-        [InlineKeyboardButton(text="Хочу пройти собеседование", callback_data="info")],
+        [InlineKeyboardButton(text="Хочу пройти собеседование", callback_data="start_student")],
         [InlineKeyboardButton(text="Хочу провести собеседование", callback_data="start")],
     ]
 
@@ -76,30 +76,33 @@ INFO_TEXT = """
 
 🔍 Поиск - поиск людей, с которыми можно пройти собеседование
 
-👀 Видимость - показывать ли мою анкету другим людям
-
-📋 Список твоих интервьюеров - список людей, которые взяли тебя на собеседование
+🗓 Настройки календаря - просмотр и отмена записей
 """
 
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    kb = [
-        [InlineKeyboardButton(text="Хочу пройти собеседование", callback_data="info")],
-        [InlineKeyboardButton(text="Хочу провести собеседование", callback_data="start")],
-    ]
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
-    await message.answer(start_message, reply_markup=keyboard)
+    await message.answer(start_message, reply_markup=starting_kb())
 
 
 
-@dp.callback_query(lambda query: query.data == "info")
-async def student_info(callback: CallbackQuery):
-    await bot.edit_message_text(
-        chat_id=callback.message.chat.id,
-        message_id=callback.message.message_id,
-        text=INFO_TEXT,
-        reply_markup=kb.info_and_continue_kb()
-    )
+@dp.callback_query(lambda c: c.data == "start_student")
+async def student_info(callback_query: CallbackQuery, state: FSMContext):
+    user, i = await check_student_id(callback_query.from_user.id)
+    if i == 0:
+        await callback_query.message.edit_text("Здравствуйте, сначала пройдите регистрацию", reply_markup=student_registration_kb())
+    else:
+        DATA = """
+                Привет! Твоя анкета:
+
+Имя: {}
+Уровень: {}
+Сфера: {}
+Описание: 
+{}
+""" + INFO_TEXT
+        await callback_query.message.edit_text(
+            DATA.format(user["name"], user["grade"], user["sphere"], user["description"]),
+            reply_markup=info_and_continue_kb())
+
 

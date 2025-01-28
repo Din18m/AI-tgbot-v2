@@ -16,19 +16,23 @@ def search_or_filters_kb() -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(text="Искать", callback_data="search")],
         [InlineKeyboardButton(text="Фильтры", callback_data="filters")],
-        [InlineKeyboardButton(text="Назад", callback_data="info")]
+        [InlineKeyboardButton(text="Назад", callback_data="start_student")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 
-def searching_kb() -> InlineKeyboardMarkup:
-    buttons = [
-        [InlineKeyboardButton(text="Принять", callback_data="agree"),
-         InlineKeyboardButton(text="Вперед", callback_data="next_teacher")
-         ],
-        [InlineKeyboardButton(text="Назад", callback_data="cmd_go")]
-    ]
+def searching_kb(windows: list[dict]) -> InlineKeyboardMarkup:
+    buttons = []
+    for window in windows:
+        datetime_obj = window["time"]
+        date = datetime_obj.strftime("%d.%m")
+        time = datetime_obj.strftime("%H:%M")
+        buttons.append([InlineKeyboardButton(text=f"{date} {time} {window["description"]}", callback_data=f"{window['id']}_accept")])
+
+    buttons.append([InlineKeyboardButton(text="Вперед", callback_data="next_teacher")])
+    buttons.append([InlineKeyboardButton(text="Назад", callback_data="cmd_go")])
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
@@ -79,6 +83,14 @@ def fchoose_grade_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="Middle", callback_data="Middle_gradef")],
         [InlineKeyboardButton(text="Senior", callback_data="Senior_gradef")],
         [InlineKeyboardButton(text="Назад", callback_data="returnf")]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+def making_sure_kb(identifier: int) -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text="Да", callback_data=f"{identifier}_accepting"),
+         InlineKeyboardButton(text=f"Нет", callback_data=f"not_sure")],
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard

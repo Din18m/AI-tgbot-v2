@@ -14,8 +14,9 @@ from config import dp, bot
 import student.registration.registration
 import student.search.search
 import student.search.filters
-import student.setting.setting
-import student.myteacher.myteacher
+# import student.setting.setting
+# import student.myteacher.myteacher
+import student.calendar.calendar
 
 import teacher.registration.registration
 import teacher.search.search

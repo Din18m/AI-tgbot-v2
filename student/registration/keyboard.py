@@ -3,7 +3,7 @@
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from student.search.filters import NoneData
+from const import NoneData
 
 
 def registration_kb() -> InlineKeyboardMarkup:
@@ -47,7 +47,7 @@ def registration_okay_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="Уровень ✅", callback_data="grade")],
         [InlineKeyboardButton(text="Сфера ✅", callback_data="sphere")],
         [InlineKeyboardButton(text="Краткий рассказ ✅", callback_data="bio")],
-        [InlineKeyboardButton(text="Выйти", callback_data="info"),
+        [InlineKeyboardButton(text="Выйти", callback_data="start_student"),
          InlineKeyboardButton(text="Сохранить", callback_data="all_is_okay")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -95,9 +95,8 @@ def info_and_continue_kb() -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(text="Регистрация", callback_data="registration")],
         [InlineKeyboardButton(text="Поиск", callback_data="cmd_go")],
-        [InlineKeyboardButton(text="Видимость", callback_data="setting_student")],
-        [InlineKeyboardButton(text="Список людей, которые хотят вас пособесить", callback_data="teacher_list")],
-        [InlineKeyboardButton(text="Назад", callback_data="return_to_start")]
+        [InlineKeyboardButton(text="Настройки календаря", callback_data="calendar")],
+        [InlineKeyboardButton(text="Вернуться к выбору роли", callback_data="return_to_start")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard

@@ -7,9 +7,9 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
 
 from config import dp, bot
-from db.db_student import get_all, update_all, insert_all
+from db.db_student import get_all_info, update_all, insert_all
 from student.registration import keyboard as kb
-
+from const import NoneData
 
 class Registration(StatesGroup):
     name = State()
@@ -27,8 +27,6 @@ DATA = """
 Описание: 
 {}
 """
-
-NoneData = ""
 
 
 async def display_student(state: FSMContext):
@@ -53,7 +51,7 @@ async def display_student(state: FSMContext):
 
 @dp.callback_query(lambda c: c.data == "registration")
 async def cmd_reg(callback: CallbackQuery, state: FSMContext):
-    student_data = await get_all(callback.from_user.id)
+    student_data = await get_all_info(callback.from_user.id)
     if student_data:
         student_data = student_data[0]
         await state.update_data(name=student_data["name"], grade=student_data["grade"], sphere=student_data["sphere"],
@@ -147,7 +145,7 @@ async def end_fill_bio(message: Message, state: FSMContext):
 
 
 ALL_OKAY_TEXT = """
-Регистрация успешно завершена, все изменения внесены
+Все изменения внесены
     
 Вот список функций, которые вы можете использовать для поиска собеседований:
 
@@ -155,9 +153,7 @@ ALL_OKAY_TEXT = """
 
 🔍 Поиск - поиск людей, с которыми можно пройти собеседование
 
-👀 Видимость - показывать ли мою анкету другим людям
-
-📋 Список твоих интервьюеров - список людей, которые взяли тебя на собеседование
+🗓 Настройки календаря - просмотр и отмена записей
 """
 
 
@@ -165,7 +161,7 @@ ALL_OKAY_TEXT = """
 async def end_reg(callback: CallbackQuery, state: FSMContext):
     student_id = callback.from_user.id
     student_data = await state.get_data()
-    if await get_all(student_id):
+    if await get_all_info(student_id):
         await update_all(student_id, student_data["name"], student_data["grade"], student_data["sphere"],
                          student_data["bio"])
     else:

@@ -22,14 +22,14 @@ def check_id(user_id: int) -> (teacher.model.Teacher, int):
     cursor = connection.cursor()
     try:
         # Проверяем наличие пользователя с данным user_id
-        check_query = sql.SQL("SELECT EXISTS (SELECT 1 FROM teacher WHERE id = %s)")
+        check_query = sql.SQL("SELECT EXISTS (SELECT 1 FROM teachers WHERE id = %s)")
         cursor.execute(check_query, (user_id,))
         exists = cursor.fetchone()[0]
-        TMP = sql.SQL("SELECT * from teacher WHERE id = %s")
+        TMP = sql.SQL("SELECT * from teachers WHERE id = %s")
         cursor.execute(TMP, (user_id,))
         if exists:
             # Если пользователь существует, извлекаем информацию
-            get_all_query = sql.SQL("SELECT * FROM teacher WHERE id = %s")
+            get_all_query = sql.SQL("SELECT * FROM teachers WHERE id = %s")
             cursor.execute(get_all_query, (user_id,))
             rows = cursor.fetchone()
             user = teacher.model.Teacher(
