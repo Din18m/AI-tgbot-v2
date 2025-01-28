@@ -232,15 +232,30 @@ def delete_window(id: int):
     connection = db_connection()
     cursor = connection.cursor()
     try:
-        window = sql.SQL("""
-            SELECT id_teacher FROM windows WHERE id = %s
-            """)
-        cursor.execute(window, (id,))
+        window_query = sql.SQL("""
+                               SELECT id, time, description, id_student, id_teacher FROM windows WHERE id = %s
+                               """)
+        cursor.execute(window_query, (id,))
 
-        id_teacher = cursor.fetchone()[0]
+        row = cursor.fetchone()
+
+        window = {"id": row[0], "time": row[1], "description": row[2], "student": row[3]}
+
+        id_teacher = row[4]
 
         insert_query = sql.SQL("""delete FROM windows WHERE id = %s """)
         cursor.execute(insert_query, (id,))
+        window_query = sql.SQL("""
+                    SELECT id_student FROM requests WHERE id_window = %s
+                    """)
+        cursor.execute(window_query, (id,))
+        rows = cursor.fetchall()
+        for row in rows:
+            notify.dislike(row[0], id_teacher, window)
+
+        id_teacher = cursor.fetchone()[0]
+        delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
+        cursor.execute(delete_query, (id,))
         cnt_wind = get_cnt_windows(id_teacher)
         if cnt_wind == 1:
             update_query = sql.SQL("""
@@ -318,5 +333,71 @@ def get_requests(id_teacher: int):
             connection.close()
 
 
-def check_free_window(id:int) ->bool:
-    return True
+def check_exist_request(id: int) -> bool:
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        window = sql.SQL("""
+                SELECT EXISTS (
+  SELECT 1 
+  FROM requests 
+  WHERE id = %s
+);
+""")
+        cursor.execute(window, (id,))
+        row = cursor.fetchone()
+        return row[0]
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+def delete_one_dislike_requests(id_request: int):
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        window_query = sql.SQL("""
+                        SELECT id_student, id_window FROM requests WHERE id = %s
+                        """)
+        cursor.execute(window_query, (id_request,))
+        row = cursor.fetchone()
+        id_student = row[0]
+        id_window = row[1]
+        window_query = sql.SQL("""
+                                   SELECT id, time, description, id_student, id_teacher FROM windows WHERE id = %s
+                                   """)
+        cursor.execute(window_query, (id_window,))
+
+        row = cursor.fetchone()
+
+        window = {"id": row[0], "time": row[1], "description": row[2], "student": row[3]}
+
+        id_teacher = row[4]
+
+        notify.dislike(id_student, id_teacher, window)
+        delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
+        cursor.execute(delete_query, (id_request,))
+        cursor.connection.commit()
+        return True
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+def delete_all_window_requests(id_window: int):
+    pass
+
+
+def like_requests(id_request: int):
+    pass
+
+
+def delete_time_student_requests(id_student: int):
+    pass
