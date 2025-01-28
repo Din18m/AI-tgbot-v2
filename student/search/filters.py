@@ -2,14 +2,18 @@
 Реализация рандомного поиска с фильтрами
 """
 import random
+from itertools import product
+
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from db.db_student import get_filter_teachers
-from db.db_teacher import check_id, get_all_student
+
+from const import TEACHER_DATA_sign_up, TEACHER_DATA
+from db.db_student import get_filter_teachers, get_all_teacher_windows, sign_up_student
 from student.search import keyboard as kb
 
 from config import dp, NoneData, bot
+from student.search.keyboard import fmaking_sure_kb
 
 
 class Filters(StatesGroup):
@@ -108,13 +112,7 @@ async def choose_sphere(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Filters.wait)
 
 
-TEACHER_DATAf = """
-Имя:    {}
-Уровень:    {}
-Сфера:    {}
-Краткий рассказ:
-{}
-"""
+# ================================================================================================
 
 
 async def display_filter_teachers(callback: CallbackQuery, state: FSMContext):
@@ -124,39 +122,94 @@ async def display_filter_teachers(callback: CallbackQuery, state: FSMContext):
 
     if index < len(teacher_list):
         teacher = teacher_list[index]
+        id_teacher = teacher["id"]
+        teachers_windows = await get_all_teacher_windows(id_teacher)
+
+        if teacher["flag"]:
+            text = TEACHER_DATA_sign_up.format(teacher["name"], teacher["grade"], teacher["sphere"],
+                                               teacher["bio"], teacher["cnt_came"], teacher["cnt_pass"], teacher["symbol"])
+        else:
+            text=TEACHER_DATA.format(teacher["name"], teacher["grade"], teacher["sphere"],
+                                       teacher["bio"], teacher["cnt_came"], teacher["cnt_pass"], teacher["symbol"])
+
         await callback.message.edit_text(
-            text=TEACHER_DATAf.format(teacher["name"], teacher["grade"], teacher["sphere"], teacher["bio"]),
-            reply_markup=kb.fsearching_kb()
+            text=text,
+            reply_markup=kb.fsearching_kb(teachers_windows)
         )
-    else:
-        await state.clear()
+
+    else: #вроде так, пока хз (для бесконечного поиска)
+        await state.update_data(index=0)
+        teacher = teacher_list[0]
+        id_teacher = teacher["id"]
+        teachers_windows = await get_all_teacher_windows(id_teacher)
+
+        if teacher["flag"]:
+            text = TEACHER_DATA_sign_up.format(teacher["name"], teacher["grade"], teacher["sphere"],
+                                               teacher["bio"], teacher["cnt_came"], teacher["cnt_pass"], teacher["symbol"])
+        else:
+            text=TEACHER_DATA.format(teacher["name"], teacher["grade"], teacher["sphere"],
+                                       teacher["bio"], teacher["cnt_came"], teacher["cnt_pass"], teacher["symbol"])
+
         await callback.message.edit_text(
-            text="Учителя закончились((",
-            reply_markup=kb.return_go_kb()
+            text=text,
+            reply_markup=kb.fsearching_kb(teachers_windows)
         )
 
 
-async def get_random_teachersf(grade, sphere, id_student) -> list[dict]:
-    list_ = await get_filter_teachers(grade, sphere, id_student)
+async def get_random_teachersf(grade:str, sphere:str, id_student:int) -> list[dict]:
+    list_, ids = await get_filter_teachers(grade, sphere, id_student)
+    for teacher in list_:
+        if teacher["id"] in ids: #показывать ли текст (*уже в календаре*)
+            teacher["flag"] = True
+        else:
+            teacher["flag"] = False
     random.shuffle(list_)
+    unrepeatable_symbols = [''.join(i) for i in product('-_*', repeat=7)]
+    random.shuffle(unrepeatable_symbols)
+    for i in range(len(list_)):
+        list_[i]["symbol"] = unrepeatable_symbols[i]
     return list_
 
-
-@dp.callback_query(lambda c: c.data == "fsearch")
+@dp.callback_query(lambda c: c.data == "searchf")
 async def searching(callback: CallbackQuery, state: FSMContext):
     teacher_data = await state.get_data()
     gr = teacher_data["grade"]
     sp = teacher_data["sphere"]
-    if "list" not in teacher_data:
-        random_list = await get_random_teachersf(gr, sp, callback.from_user.id)
-        await state.update_data(list=random_list, index=0)
-        await display_filter_teachers(callback, state)
+
+    random_list = await get_random_teachersf(gr, sp, callback.from_user.id)
+    await state.update_data(list=random_list, index=0)
+    await display_filter_teachers(callback, state)
 
 
-@dp.callback_query(lambda c: c.data == "fnext_teacher")
+@dp.callback_query(lambda c: c.data == "next_teacherf")
 async def searching_next(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     index = data.get("index", 0) + 1
 
     await state.update_data(index=index)
+    await display_filter_teachers(callback, state)
+
+
+@dp.callback_query(lambda c: c.data.split('_')[-1] == "acceptf")
+async def make_sure_with_accepting(callback: CallbackQuery, state: FSMContext):
+    window_id = int(callback.data.split('_')[0])
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        text='Вы уверены, что хотите записаться?',
+        reply_markup=fmaking_sure_kb(window_id)
+    )
+
+
+@dp.callback_query(lambda c: c.data.split('_')[-1] == "acceptingf")
+async def sure_with_accepting(callback: CallbackQuery, state: FSMContext):
+    window_id = int(callback.data.split('_')[0])
+    data = await state.get_data()
+    teacher_id = data["list"][data["index"]]["id"]
+    await sign_up_student(callback.from_user.id, teacher_id, window_id)
+    await display_filter_teachers(callback, state)
+
+
+@dp.callback_query(lambda c: c.data == "not_suref")
+async def not_sure_with_accepting(callback: CallbackQuery, state: FSMContext):
     await display_filter_teachers(callback, state)

@@ -114,7 +114,7 @@ async def update_all(user_id:int, name: str, grade: str, sphere: str, bio: str) 
             cursor.close()
             connection.close()
 
-#todo поменять sql-запросы
+
 
 async def get_all_teachers(id_student: int) -> (list[dict], list):
     """
@@ -130,8 +130,9 @@ async def get_all_teachers(id_student: int) -> (list[dict], list):
             SELECT name, grade, sphere, description, id, cnt_came, cnt_pass
             FROM teachers
             WHERE show = true
+            and id!=%s
             """)
-        cursor.execute(get_all_teachers_query)
+        cursor.execute(get_all_teachers_query, (id_student,))
 
         rows = cursor.fetchall()
 
@@ -170,7 +171,7 @@ all_grades = ["No_work", "Intern", "Junior", "Middle", "Senior"]
 all_spheres = ["NLP", "CV", "RecSys", "Audio", "Classic_ML", "Any"]
 
 
-async def get_filter_teachers(grade: str, sphere: str, id_student:int) -> list[dict]:
+async def get_filter_teachers(grade:str, sphere:str, id_student:int) -> (list[dict], list):
     """
     Взять всех учителей, у которых show = true и походящими под фильтры
     :param grade:
@@ -183,43 +184,50 @@ async def get_filter_teachers(grade: str, sphere: str, id_student:int) -> list[d
 
     try:
         get_all_fteachers_query = sql.SQL("""
-        SELECT name, grade, sphere, description, id FROM teachers
-        WHERE
-        grade similar to %s and
+        SELECT name, grade, sphere, description, id, cnt_came, cnt_pass 
+        FROM teachers
+        WHERE grade similar to %s and
         sphere similar to %s and
-        show = true
-        and id != %s
-        AND NOT EXISTS (
-                SELECT 1
-                FROM teacher_student
-                WHERE teachers.id = teacher_student.id_teacher
-                AND teacher_student.id_student = %s
-                AND teacher_student.id_student != teacher_student.id_teacher
-        )""")
+        show = true and
+        id!=%s;
+        """)
 
-        if not grade and sphere:
+        if (not grade) and sphere:
             cursor.execute(get_all_fteachers_query,
-                           ("%(" + "|".join(all_grades) + ")%", "%(" + "|".join(sphere.split(", ")) + ")%", id_student,
-                            id_student))
-        elif not sphere and grade:
+                           ("%(" + "|".join(all_grades) + ")%", "%(" + "|".join(sphere.split(", ")) + ")%", id_student))
+        elif (not sphere) and grade:
             cursor.execute(get_all_fteachers_query,
-                           ("%(" + "|".join(grade.split(", ")) + ")%", "%(" + "|".join(all_spheres) + ")%", id_student,
-                            id_student))
-        elif not grade and not sphere:
+                           ("%(" + "|".join(grade.split(", ")) + ")%", "%(" + "|".join(all_spheres) + ")%", id_student))
+        elif (not grade) and (not sphere):
             cursor.execute(get_all_fteachers_query,
-                           ("%(" + "|".join(all_grades) + ")%", "%(" + "|".join(all_spheres) + ")%", id_student,
-                            id_student))
+                           ("%(" + "|".join(all_grades) + ")%", "%(" + "|".join(all_spheres) + ")%", id_student))
         else:
             cursor.execute(get_all_fteachers_query,
-                           ("%(" + "|".join(grade.split(", ")) + ")%", "%(" + "|".join(sphere.split(", ")) + ")%",
-                            id_student, id_student))
+                           ("%(" + "|".join(grade.split(", ")) + ")%", "%(" + "|".join(sphere.split(", ")) + ")%", id_student))
         rows = cursor.fetchall()
-        user_info = [
-            {"name": row[0], "grade": row[1], "sphere": row[2], "bio": row[3], "id": row[4]}
+
+        teachers_info = [
+            {"name": row[0], "grade": row[1], "sphere": row[2], "bio": row[3], "id": row[4],
+             "cnt_came": row[5], "cnt_pass": row[6]}
             for row in rows
         ]
 
-        return user_info
+        get_students_teachers_query = sql.SQL("""
+                    SELECT id_teacher
+                    FROM windows
+                    WHERE id_student=%s
+                    """)
+
+        cursor.execute(get_students_teachers_query, (id_student,))
+
+        rows = cursor.fetchall()
+
+        sign_up_ids = [
+            row[0]
+            for row in rows
+        ]
+
+        return teachers_info, sign_up_ids
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
@@ -229,7 +237,6 @@ async def get_filter_teachers(grade: str, sphere: str, id_student:int) -> list[d
             cursor.close()
             connection.close()
 
-#todo поменять sql-запросы
 
 async def get_teacher_by_id(user_id: int) -> list[dict]:
     """
