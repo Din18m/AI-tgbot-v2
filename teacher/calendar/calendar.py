@@ -75,7 +75,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
 async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     info = await state.get_data()
     delete = info["delete"]
-    delete_window(delete)
+    await delete_window(delete)
     windows = get_free_window(callback.from_user.id)
     if len(windows) == 0:
         await callback.message.edit_text("у вас нет свободных окон для удаления\nСоздать окно\nУдалить "
