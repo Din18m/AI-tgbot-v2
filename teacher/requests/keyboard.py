@@ -16,3 +16,7 @@ def my_student():
             InlineKeyboardButton(text="Назад", callback_data="start"),
         ]
     ]
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
+    return keyboard
+
