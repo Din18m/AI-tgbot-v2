@@ -491,13 +491,9 @@ async def like_requests(id_request: int):
         delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
         cursor.execute(delete_query, (id_request,))
 
-        update_query = sql.SQL("""
-                                            UPDATE windows
-                                            SET id_student = %s
-                                            WHERE id = %s
-                                        """)
+        update_query = sql.SQL("""UPDATE windows SET id_student = %s WHERE id = %s""")
         cursor.execute(update_query, (id_student, id_window,))
-        if get_free_cnt_windows(id_teacher) == 0:
+        if get_free_cnt_windows(id_teacher) == 1:
             update_query = sql.SQL("""
                                                 UPDATE teachers
                                                 SET show = false
@@ -505,10 +501,8 @@ async def like_requests(id_request: int):
                                             """)
             cursor.execute(update_query, (id_teacher,))
 
-        window_query = sql.SQL("""
-                                SELECT id_student FROM requests WHERE id_window = %s
-                                """)
-        cursor.execute(window_query, (id_window,))
+        window_query = sql.SQL("""SELECT id_student FROM requests WHERE id_window = %s and id_student != %s""")
+        cursor.execute(window_query, (id_window, id_student, ))
         rows = cursor.fetchall()
         for row in rows:
             await notify.dislike(row[0], id_teacher, window)
