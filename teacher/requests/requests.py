@@ -127,9 +127,9 @@ async def my_students_teacher(callback: CallbackQuery, state: FSMContext):
     requests = info["requests"]
     id = info["id"]
     request = requests[id]
+    await db.delete_time_student_requests(request["student"]["id"], request["window"]["id"])
     await db.like_requests(request["id"])
     await db.delete_all_window_requests(request["window"]["id"])
-    await db.delete_time_student_requests(request["student"]["id"], request["window"]["id"])
     new_id = id
     flag = db.check_exist_request(requests[id]["id"])
     new_requests = requests[:id]
