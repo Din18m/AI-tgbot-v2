@@ -487,7 +487,7 @@ async def like_requests(id_request: int):
 
         id_teacher = row[4]
 
-        await notify.like(id_student, id_teacher, window)
+        await notify.like(id_student, id_teacher, window, nickname_teacher, nickname_student)
         delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
         cursor.execute(delete_query, (id_request,))
 
@@ -504,6 +504,16 @@ async def like_requests(id_request: int):
                                                 WHERE id = %s
                                             """)
             cursor.execute(update_query, (id_teacher,))
+
+        window_query = sql.SQL("""
+                                SELECT id_student FROM requests WHERE id_window = %s
+                                """)
+        cursor.execute(window_query, (id_window,))
+        rows = cursor.fetchall()
+        for row in rows:
+            await notify.dislike(row[0], id_teacher, window)
+        delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
+        cursor.execute(delete_query, (id_window,))
 
         cursor.connection.commit()
         return True
