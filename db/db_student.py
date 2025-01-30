@@ -6,7 +6,7 @@ from psycopg2 import sql
 
 import config
 from const import all_grades, all_spheres
-from db.db_teacher import get_free_cnt_windows
+
 
 db_config = {
     'dbname': config.DB_NAME,
@@ -334,7 +334,23 @@ order by w.time;
             cursor.close()
             connection.close()
 
+def free_cnt_windows(id_teacher: int):
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        window = sql.SQL("""SELECT COUNT(*) FROM windows WHERE id_teacher = %s AND id_student IS NULL;""")
+        cursor.execute(window, (id_teacher,))
 
+        cnt = cursor.fetchone()[0]
+
+        return cnt
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
 
 async def cancel_student_window(id_window: int) -> None|int:
     connection = db_connection()
@@ -348,7 +364,7 @@ async def cancel_student_window(id_window: int) -> None|int:
         rows = cursor.fetchone()
         id_teacher = rows[0][0]
 
-        if get_free_cnt_windows(id_teacher) != 0:
+        if free_cnt_windows(id_teacher) != 0:
             update_query = sql.SQL("""
                                                 UPDATE teachers
                                                 SET show = true

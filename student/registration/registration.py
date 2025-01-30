@@ -5,6 +5,7 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
+import general_notices
 
 from config import dp, bot
 from db.db_student import get_all_info, update_all, insert_all
