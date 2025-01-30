@@ -5,8 +5,6 @@ from psycopg2 import sql
 
 import config
 import teacher.model
-from config import schedule
-from general_notices import notify_before_interview, notify_after_interview
 from teacher import notify
 
 db_config = {
@@ -489,7 +487,7 @@ async def like_requests(id_request: int):
 
         id_teacher = row[4]
 
-        await notify.like(id_student, id_teacher, window)
+        await notify.like(id_student, id_teacher, window, nickname_teacher, nickname_student)
         delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
         cursor.execute(delete_query, (id_request,))
 
