@@ -1,6 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from datetime import datetime
+from aiogram.types import CallbackQuery
 
 from config import dp
 from db import db_teacher as db
@@ -9,6 +8,7 @@ from db.db_teacher import check_id
 from teacher.requests import keyboard as kb
 
 import start.keyboard as kbs
+
 
 @dp.callback_query(lambda query: query.data == "my_students_teacher")
 async def my_students_teacher(callback: CallbackQuery, state: FSMContext):
@@ -119,6 +119,7 @@ async def my_students_teacher(callback: CallbackQuery, state: FSMContext):
                                                                    student["cnt_pass"],
                                                                    student["cnt_cancel"], ),
                                      reply_markup=kb.my_student())
+
 
 @dp.callback_query(lambda query: query.data == "like_student_teacher")
 async def my_students_teacher(callback: CallbackQuery, state: FSMContext):

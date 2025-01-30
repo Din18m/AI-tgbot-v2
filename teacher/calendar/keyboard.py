@@ -3,7 +3,6 @@
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from const import DayWeekRU, DayWeekEN
-from datetime import datetime, timedelta
 
 
 def setting_teacher() -> InlineKeyboardMarkup:

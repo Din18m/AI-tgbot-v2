@@ -19,4 +19,3 @@ def my_student():
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
     return keyboard
-

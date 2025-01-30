@@ -1,16 +1,15 @@
 """Реализация настроек календаря"""
 from datetime import datetime, timedelta
 
-from aiogram.filters import StateFilter, state
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
 
-import db.db_teacher
+import db.db_teacher as db
 import teacher.calendar.keyboard as kb
 from config import dp
 from const import DayWeekEN
-from db.db_teacher import check_id, get_cnt_windows, add_new_window, get_free_window, delete_window, get_all_window
 
 
 class CalendarTeacher(StatesGroup):
@@ -30,7 +29,7 @@ async def calendar(callback: CallbackQuery):
 
 @dp.callback_query(lambda query: query.data == "create_setting_teacher")
 async def create_setting_teacher(callback: CallbackQuery, state: FSMContext):
-    cnt_windows = get_cnt_windows(callback.from_user.id)
+    cnt_windows = db.get_cnt_windows(callback.from_user.id)
     if cnt_windows == 8:
         await callback.message.edit_text("у вас уже 8 окон\nСоздать окно\nУдалить окно\nПросмотреть Окна\nНазад",
                                          reply_markup=kb.setting_teacher())
@@ -43,7 +42,7 @@ async def create_setting_teacher(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(lambda query: query.data == "delete_setting_teacher")
 async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
-    windows = get_free_window(callback.from_user.id)
+    windows = db.get_free_window(callback.from_user.id)
     if len(windows) == 0:
         await callback.message.edit_text("у вас нет свободных окон для удаления\nСоздать окно\nУдалить "
                                          "окно\nПросмотреть Окна\nНазад",
@@ -72,12 +71,12 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
                                      reply_markup=kb.sure())
 
 
-@dp.callback_query(lambda query: query.data == ("delete_now_calendar_teacher"))
+@dp.callback_query(lambda query: query.data == "delete_now_calendar_teacher")
 async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     info = await state.get_data()
     delete = info["delete"]
-    await delete_window(delete)
-    windows = get_free_window(callback.from_user.id)
+    await db.delete_window(delete)
+    windows = db.get_free_window(callback.from_user.id)
     if len(windows) == 0:
         await callback.message.edit_text("у вас нет свободных окон для удаления\nСоздать окно\nУдалить "
                                          "окно\nПросмотреть Окна\nНазад",
@@ -97,7 +96,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(lambda query: query.data == "show_setting_teacher")
 async def show_setting_teacher(callback: CallbackQuery):
-    windows = get_all_window(callback.from_user.id)
+    windows = db.get_all_window(callback.from_user.id)
     if len(windows) == 0:
         await callback.message.edit_text("у вас нет окон\nСоздать окно\nУдалить "
                                          "окно\nПросмотреть Окна\nНазад",
@@ -177,7 +176,8 @@ async def time_teacher(message: Message, state: FSMContext):
                                 h=h, m=m)
         await state.set_state(CalendarTeacher.description)
         await call.message.edit_text(
-            f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} ",
+            f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа "
+            f"в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} ",
             reply_markup=kb.cancel_setting_teacher())
     except Exception:
         await call.message.edit_text(
@@ -195,12 +195,13 @@ async def time_ret_teacher(callback: CallbackQuery, state: FSMContext):
     m = info["m"]
     await state.set_state(CalendarTeacher.description)
     await call.message.edit_text(
-        f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} ",
+        f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в "
+        f"{str(h).rjust(2, "0")}:{str(m).rjust(2, "0")} ",
         reply_markup=kb.cancel_setting_teacher())
 
 
 @dp.message(StateFilter(CalendarTeacher.description))
-async def time_tiacher(message: Message, state: FSMContext):
+async def time_teacher(message: Message, state: FSMContext):
     desc = message.text
     info = await state.get_data()
     call = info["call"]
@@ -220,7 +221,8 @@ async def time_tiacher(message: Message, state: FSMContext):
     except Exception:
         await call.message.edit_text(
             text=f"превышение размера текста\n"
-                 + f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")}",
+                 + f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} "
+                   f"числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")}",
             reply_markup=kb.cancel_setting_teacher())
 
 
@@ -231,6 +233,6 @@ async def calendar(callback: CallbackQuery, state: FSMContext):
     desc = info["desc"]
     await state.clear()
 
-    add_new_window(callback.from_user.id, time, desc)
+    db.add_new_window(callback.from_user.id, time, desc)
     await callback.message.edit_text("окно успешно сохранено\n\nСоздать окно\nУдалить окно\nПросмотреть Окна\nНазад",
                                      reply_markup=kb.setting_teacher())

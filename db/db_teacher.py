@@ -5,7 +5,6 @@ from psycopg2 import sql
 
 import config
 import teacher.model
-from config import schedule
 from teacher import notify
 
 db_config = {
@@ -284,7 +283,7 @@ async def delete_window(id: int):
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id,))
         cnt_wind = get_cnt_windows(id_teacher)
-        if cnt_wind == 1:
+        if get_free_cnt_windows(id_teacher) == 1:
             update_query = sql.SQL("""
                                     UPDATE teachers
                                     SET cnt_window = %s, show = false
@@ -341,7 +340,8 @@ async def get_requests(id_teacher: int):
                 continue
             elem["window"] = window
             student = sql.SQL("""
-                SELECT id, nickname, name, grade, sphere, description, cnt_came, cnt_pass, cnt_cancel FROM students WHERE id = %s
+                SELECT id, nickname, name, grade, sphere, description, cnt_came, cnt_pass, cnt_cancel 
+                FROM students WHERE id = %s
                 """)
             cursor.execute(student, (elem["student"],))
             row = cursor.fetchone()
@@ -442,22 +442,6 @@ async def delete_all_window_requests(id_window: int):
             await notify.dislike(row[0], id_teacher, window)
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id_window,))
-        cnt_wind = get_cnt_windows(id_teacher)
-        if cnt_wind == 1:
-            update_query = sql.SQL("""
-                                        UPDATE teachers
-                                        SET cnt_window = %s, show = false
-                                        WHERE id = %s
-                                    """)
-        else:
-            update_query = sql.SQL("""
-                                        UPDATE teachers
-                                        SET cnt_window = %s, show = true
-                                        WHERE id = %s
-                                    """)
-        cursor.execute(update_query, (
-            cnt_wind - 1, id_teacher
-        ))
         cursor.connection.commit()
         return True
 
@@ -604,12 +588,34 @@ def delete_windows_expired():
     cursor = connection.cursor()
     try:
         request = sql.SQL("""
+                           SELECT 
+    id_teacher,
+    COUNT(*) AS expired_windows_count
+FROM windows 
+WHERE 
+    time AT TIME ZONE 'Europe/Moscow' < 
+    (NOW() AT TIME ZONE 'Europe/Moscow' - INTERVAL '2 hours')
+GROUP BY id_teacher;
+                           """)
+        cursor.execute(request)
+        rows = cursor.fetchall()
+
+        request = sql.SQL("""
                    DELETE FROM windows 
 WHERE 
     time AT TIME ZONE 'Europe/Moscow' <  -- Конвертируем хранимое время в тип с зоной
-    (NOW() AT TIME ZONE 'Europe/Moscow');
+    (NOW() AT TIME ZONE 'Europe/Moscow' - INTERVAL '2 hours');
                    """)
         cursor.execute(request)
+        for row in rows:
+            id_teacher = row[0]
+            if get_free_cnt_windows(id_teacher) - row[1] == 0:
+                update_query = sql.SQL("""
+                                                    UPDATE teachers
+                                                    SET show = false
+                                                    WHERE id = %s
+                                                """)
+                cursor.execute(update_query, (id_teacher,))
 
         cursor.connection.commit()
 
