@@ -2,7 +2,7 @@ all_grades = ["No_work", "Intern", "Junior", "Middle", "Senior", "Без гре�
 all_spheres = ["NLP", "CV", "RecSys", "Audio", "Classic_ML", "Any"]
 NoneData = ""
 YourForm = """
-Привет! Твоя анкета:
+Твоя анкета:
 
 Имя: {}
 Уровень: {}
