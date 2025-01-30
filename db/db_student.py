@@ -362,8 +362,7 @@ async def cancel_student_window(id_window: int) -> None|int:
             """)
         cursor.execute(canceling_window_query, (id_window,))
         rows = cursor.fetchone()
-        id_teacher = rows[0][0]
-
+        id_teacher = rows[0]
         if free_cnt_windows(id_teacher) != 0:
             update_query = sql.SQL("""
                                                 UPDATE teachers
