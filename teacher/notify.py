@@ -14,7 +14,7 @@ async def dislike(id_student: int, id_teacher: int, window: dict):
         reply_markup=kb_notify())
 
 
-async def like(id_student: int, id_teacher: int, window: dict):
+async def like(id_student: int, id_teacher: int, window: dict, nickname_teacher: str, nickname_student: str):
     await bot.send_message(
         chat_id=id_student,
         text=f"Ваша заявка {id_teacher} на окно: {datetime.strftime(window["time"], "%d.%m %H:%M")} "

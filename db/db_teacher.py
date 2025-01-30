@@ -5,7 +5,6 @@ from psycopg2 import sql
 
 import config
 import teacher.model
-from config import schedule
 from teacher import notify
 
 db_config = {
