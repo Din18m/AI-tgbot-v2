@@ -590,22 +590,20 @@ def get_all_requests():
             cursor.close()
             connection.close()
 
+
 def delete_windows_expired():
     connection = db_connection()
     cursor = connection.cursor()
     try:
         request = sql.SQL("""
-                   SELECT id_teacher, COUNT(*) as total
-                        FROM requests
-                        GROUP BY id_teacher
+                   DELETE FROM windows 
+WHERE 
+    time AT TIME ZONE 'Europe/Moscow' <  -- Конвертируем хранимое время в тип с зоной
+    (NOW() AT TIME ZONE 'Europe/Moscow');
                    """)
         cursor.execute(request)
 
-        rows = cursor.fetchall()
-
-        request = [{"id_teacher": row[0], "cnt": row[1]} for row in rows]
-
-        return request
+        cursor.connection.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
