@@ -1,7 +1,10 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+import asyncio
 
-from config import bot, dp
-from datetime import datetime
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from pytz import timezone
+
+from config import bot, dp, schedule
+from datetime import datetime, timedelta
 
 from db.db_student import interview_marking_for_students, interview_marking_for_teachers
 
@@ -13,8 +16,27 @@ async def dislike(id_student: int, id_teacher: int, window: dict):
              f"{window['description']} была отвергнута",
         reply_markup=kb_notify())
 
+def before(id_student, nickname_student, id_teacher, nickname_teacher, window):
+    loop = asyncio.get_running_loop()
+    loop.create_task(notify_before_interview(id_student, nickname_student, id_teacher, nickname_teacher, window))
+
+def after(id_student, nickname_student, id_teacher, nickname_teacher, window):
+    loop = asyncio.get_running_loop()
+    loop.create_task(notify_after_interview(id_student, nickname_student, id_teacher, nickname_teacher, window))
+
 
 async def like(id_student: int, id_teacher: int, window: dict, nickname_teacher: str, nickname_student: str):
+    time = window["time"]
+    delta = timedelta(minutes=60)
+    time_before = time - delta
+    time_after = time + delta
+
+    schedule.add_job(before(id_student, nickname_student, id_teacher, nickname_teacher, window),
+                     run_date=time_before)
+
+    schedule.add_job(after(id_student, nickname_student, id_teacher, nickname_teacher, window),
+                     run_date=time_after)
+
     await bot.send_message(
         chat_id=id_student,
         text=f"Ваша заявка {id_teacher} на окно: {datetime.strftime(window["time"], "%d.%m %H:%M")} "
@@ -74,7 +96,7 @@ NOTIFY_TEXT="""
 Описание:
 {}
 
-Никнейм для связи - {}
+Никнейм для связи - @{}
 """
 
 NOTIFY_TEXT_after="""
@@ -85,7 +107,7 @@ NOTIFY_TEXT_after="""
 Нажмите, пожалуйста, на соответствующую\n кнопку
 """
 
-@dp.message_handler(lambda c: c.data.split("_")[-1] == "mark")
+@dp.callback_query(lambda c: c.data.split("_")[-1] == "mark")
 async def teacher_marks_came(callback: CallbackQuery):
     who = callback.data.split("_")[-2]
     what = callback.data.split("_")[-3]

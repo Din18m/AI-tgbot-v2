@@ -5,7 +5,6 @@ import asyncio
 import logging
 
 import db.migration
-import db.migration
 from config import dp, bot, schedule
 
 # Импорты ниже НЕОБХОДИМЫ для работы бота,
@@ -32,8 +31,8 @@ async def main():
 if __name__ == "__main__":
     # db.migration.migration_down()
     # db.migration.migration_up()
-    schedule.start()
     asyncio.run(main())
+    schedule.start()
 
 
 
