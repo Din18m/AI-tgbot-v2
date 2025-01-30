@@ -504,6 +504,7 @@ async def like_requests(id_request: int):
         window_query = sql.SQL("""SELECT id_student FROM requests WHERE id_window = %s and id_student != %s""")
         cursor.execute(window_query, (id_window, id_student, ))
         rows = cursor.fetchall()
+        print(rows)
         for row in rows:
             await notify.dislike(row[0], id_teacher, window)
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
