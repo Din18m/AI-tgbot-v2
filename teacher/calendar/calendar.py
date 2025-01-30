@@ -68,10 +68,11 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     ids = info["ids"]
     text = info["text"]
     await state.update_data(delete=ids[int(id) - 1])
-    await callback.message.edit_text("Вы уверены что хотите удалить окно \n" + text[int(id)-1],
+    await callback.message.edit_text("Вы уверены что хотите удалить окно \n" + text[int(id) - 1],
                                      reply_markup=kb.sure())
 
-@dp.callback_query(lambda query: query.data==("delete_now_calendar_teacher"))
+
+@dp.callback_query(lambda query: query.data == ("delete_now_calendar_teacher"))
 async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     info = await state.get_data()
     delete = info["delete"]
@@ -109,7 +110,7 @@ async def show_setting_teacher(callback: CallbackQuery):
         if windows[i]["student"] is not None:
             text.append(
                 f"{i + 1}) {windows[i]["time"].strftime('%d.%m')} "
-                f"{windows[i]["time"].strftime('%H:%M')} {windows[i]['description']}-{windows[i]["student"]}")
+                f"{windows[i]["time"].strftime('%H:%M')} {windows[i]['description']} - @{windows[i]["student"]}")
         else:
             text.append(
                 f"{i + 1}) {windows[i]["time"].strftime('%d.%m')} "
@@ -146,7 +147,6 @@ async def day_teacher(callback: CallbackQuery, state: FSMContext):
         reply_markup=kb.cancel_setting_teacher())
 
 
-
 @dp.callback_query(lambda query: query.data == "time_ret_calendar")
 async def time_ret_teacher(callback: CallbackQuery, state: FSMContext):
     info = await state.get_data()
@@ -156,6 +156,7 @@ async def time_ret_teacher(callback: CallbackQuery, state: FSMContext):
     await call.message.edit_text(
         text=f"Введите время, в которое вы проведете собеседование {data} числа в формате hh:mm",
         reply_markup=kb.cancel_setting_teacher())
+
 
 @dp.message(StateFilter(CalendarTeacher.time))
 async def time_teacher(message: Message, state: FSMContext):

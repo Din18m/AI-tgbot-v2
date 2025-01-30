@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-
 import psycopg2
 from psycopg2 import sql
 
@@ -231,15 +230,22 @@ def get_all_window(id_teacher: int):
     cursor = connection.cursor()
     try:
         window = sql.SQL("""
-            SELECT time, description, id, id_student FROM windows WHERE id_teacher = %s
+SELECT w.time,
+       w.description,
+       w.id,
+       s.nickname
+FROM windows w
+JOIN students s
+ON w.id_student = s.id
+WHERE w.id_teacher = %s
+order by w.time;
             """)
         cursor.execute(window, (id_teacher,))
 
         rows = cursor.fetchall()
 
-        window = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
-
-        return window
+        windows = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
+        return windows
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
