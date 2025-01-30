@@ -474,6 +474,18 @@ async def like_requests(id_request: int):
         id_window = row[1]
         id_teacher = row[2]
         window_query = sql.SQL("""
+                                    SELECT nickname FROM students WHERE id = %s
+                                    """)
+        cursor.execute(window_query, (id_student,))
+        row = cursor.fetchone()
+        nickname_student = row[0]
+        window_query = sql.SQL("""
+                                            SELECT nickname FROM teachers WHERE id = %s
+                                            """)
+        cursor.execute(window_query, (id_teacher,))
+        row = cursor.fetchone()
+        nickname_teacher = row[0]
+        window_query = sql.SQL("""
                                        SELECT id, time, description, id_student, id_teacher FROM windows WHERE id = %s
                                        """)
         cursor.execute(window_query, (id_window,))
@@ -545,6 +557,55 @@ def delete_time_student_requests(id_student: int, id_window: int):
                 delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
                 cursor.execute(delete_query, (window["id_request"],))
         cursor.connection.commit()
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+def get_all_requests():
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        request = sql.SQL("""
+               SELECT id_teacher, COUNT(*) as total
+                    FROM requests
+                    GROUP BY id_teacher
+               """)
+        cursor.execute(request)
+
+        rows = cursor.fetchall()
+
+        request = [{"id_teacher": row[0], "cnt": row[1]} for row in rows]
+
+        return request
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+def delete_windows_expired():
+    connection = db_connection()
+    cursor = connection.cursor()
+    try:
+        request = sql.SQL("""
+                   SELECT id_teacher, COUNT(*) as total
+                        FROM requests
+                        GROUP BY id_teacher
+                   """)
+        cursor.execute(request)
+
+        rows = cursor.fetchall()
+
+        request = [{"id_teacher": row[0], "cnt": row[1]} for row in rows]
+
+        return request
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
