@@ -13,13 +13,13 @@ def setting_teacher() -> InlineKeyboardMarkup:
     """
     kb = [
         [
-            InlineKeyboardButton(text="create", callback_data="create_setting_teacher"),
+            InlineKeyboardButton(text="Создать окно", callback_data="create_setting_teacher"),
         ],
         [
-            InlineKeyboardButton(text="delete", callback_data="delete_setting_teacher"),
+            InlineKeyboardButton(text="Удалить свободное окно", callback_data="delete_setting_teacher"),
         ],
         [
-            InlineKeyboardButton(text="show", callback_data="show_setting_teacher"),
+            InlineKeyboardButton(text="Показать окно", callback_data="show_setting_teacher"),
         ],
         [
             InlineKeyboardButton(text="Вернуться", callback_data="start"),
@@ -45,7 +45,7 @@ def day_week(d1, d2: str) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text=d2, callback_data="d2_day_teacher"),
         ],
         [
-            InlineKeyboardButton(text="вернуться", callback_data="setting_teacher"),
+            InlineKeyboardButton(text="Вернуться", callback_data="setting_teacher"),
         ]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
@@ -53,7 +53,7 @@ def day_week(d1, d2: str) -> InlineKeyboardMarkup:
 
 
 def cancel_setting_teacher() -> InlineKeyboardMarkup:
-    kb = [[InlineKeyboardButton(text="вернуться", callback_data="setting_teacher")]]
+    kb = [[InlineKeyboardButton(text="Вернуться", callback_data="setting_teacher")]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
     return keyboard
 
@@ -62,7 +62,7 @@ def delete_setting_teacher(cnt: int) -> InlineKeyboardMarkup:
     kb = []
     for i in range(cnt):
         kb.append(InlineKeyboardButton(text=str(i + 1), callback_data=str(i + 1) + "_delete_setting_teacher"))
-    cancel = [InlineKeyboardButton(text="вернуться", callback_data="setting_teacher")]
+    cancel = [InlineKeyboardButton(text="Вернуться", callback_data="setting_teacher")]
     keyboard = InlineKeyboardMarkup(inline_keyboard=[kb, cancel])
     return keyboard
 
