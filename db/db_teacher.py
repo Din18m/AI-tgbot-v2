@@ -487,7 +487,7 @@ async def like_requests(id_request: int):
 
         id_teacher = row[4]
 
-        await notify.like(id_student, id_teacher, window)
+        await notify.like(id_student, id_teacher, window, nickname_teacher, nickname_student)
         delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
         cursor.execute(delete_query, (id_request,))
 
@@ -516,7 +516,7 @@ async def like_requests(id_request: int):
             connection.close()
 
 
-def delete_time_student_requests(id_student: int, id_window: int):
+async def delete_time_student_requests(id_student: int, id_window: int):
     connection = db_connection()
     cursor = connection.cursor()
     try:
