@@ -199,6 +199,7 @@ async def sure_with_accepting(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     teacher_id = data["list"][data["index"]]["id"]
     await sign_up_student(callback.from_user.id, teacher_id, window_id)
+    await callback.answer(text="Вы успешно записались")
     await display_filter_teachers(callback, state)
 
 
