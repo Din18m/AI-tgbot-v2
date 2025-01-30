@@ -35,3 +35,10 @@ def agreement_kb(identifier: int) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
+def teacher_marks_cancel_kb(id_student) -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text="Да", callback_data=f"{id_student}_cancel_student_mark")],
+        [InlineKeyboardButton(text="Нет", callback_data="ok_notify")],
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard

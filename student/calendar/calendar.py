@@ -5,8 +5,8 @@ from aiogram.types import CallbackQuery
 
 from config import dp, bot
 from db.db_student import get_student_windows, cancel_student_window
-from student.calendar.keyboard import calendar_kb, return_to_calendar_kb, cancel_windows_kb, agreement_kb
-
+from student.calendar.keyboard import calendar_kb, return_to_calendar_kb, cancel_windows_kb, agreement_kb, \
+    teacher_marks_cancel_kb
 
 
 @dp.callback_query(lambda c: c.data == "calendar")
@@ -79,10 +79,18 @@ async def cancel_chosen_window(callback: CallbackQuery):
 @dp.callback_query(lambda c: c.data.split("_")[-1] == "agree")
 async def agree_chosen_window_cancel(callback: CallbackQuery):
     window_id = int(callback.data.split("_")[0])
-    await cancel_student_window(callback.from_user.id, window_id)
+    id_teacher = await cancel_student_window(window_id)
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
         text="Окно успешно отменено =)",
         reply_markup=return_to_calendar_kb()
     )
+
+    await bot.send_message(id_teacher, text=HAHAH,
+                     reply_markup=teacher_marks_cancel_kb(callback.from_user.id))
+
+HAHAH="""
+Кажется ученик отменил занятие=(
+Скажите, это сильно вас потрясло?
+"""

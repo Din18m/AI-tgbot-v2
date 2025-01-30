@@ -7,6 +7,7 @@ from psycopg2 import sql
 import config
 import teacher.model
 from config import schedule
+from general_notices import notify_before_interview, notify_after_interview
 from teacher import notify
 
 db_config = {
@@ -515,6 +516,12 @@ async def like_requests(id_request: int):
                                                 WHERE id = %s
                                             """)
             cursor.execute(update_query, (id_teacher,))
+
+        schedule.add_job(notify_before_interview(id_teacher, nickname_teacher, id_student, nickname_student, window),
+                         datetime=window["time"])
+
+        schedule.add_job(notify_after_interview(id_teacher, nickname_teacher, id_student, nickname_student, window),
+                         datetime=window["time"])
 
         cursor.connection.commit()
         return True

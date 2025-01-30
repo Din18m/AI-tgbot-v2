@@ -6,6 +6,7 @@ from psycopg2 import sql
 
 import config
 from const import all_grades, all_spheres
+from db.db_teacher import get_free_cnt_windows
 
 db_config = {
     'dbname': config.DB_NAME,
@@ -335,22 +336,28 @@ order by w.time;
 
 
 
-async def cancel_student_window(id_user, id_window: int) -> None|str:
+async def cancel_student_window(id_window: int) -> None|int:
     connection = db_connection()
     cursor = connection.cursor()
 
     try:
         canceling_window_query = sql.SQL("""
-            UPDATE windows SET id_student=null where id=%s;
+            UPDATE windows SET id_student=null where id=%s RETURNING id_teacher;
             """)
         cursor.execute(canceling_window_query, (id_window,))
+        rows = cursor.fetchone()
+        id_teacher = rows[0][0]
 
-        cancel_counter_query = sql.SQL("""
-                    UPDATE students SET cnt_cancel=cnt_cancel+1 where id=%s;
-                    """)
-        cursor.execute(cancel_counter_query, (id_user,))
+        if get_free_cnt_windows(id_teacher) != 0:
+            update_query = sql.SQL("""
+                                                UPDATE teachers
+                                                SET show = true
+                                                WHERE id = %s
+                                            """)
+            cursor.execute(update_query, (id_teacher,))
 
         connection.commit()
+        return id_teacher
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
@@ -414,6 +421,63 @@ async def sign_up_student(id_student, id_teacher, id_window) -> None:
         """)
 
         cursor.execute(signing_up_query, (id_student, id_teacher, id_window))
+        connection.commit()
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+async def interview_marking_for_teachers(id_teacher: int, what: str) -> None:
+    connection = db_connection()
+    cursor = connection.cursor()
+
+    try:
+        if what == "came":
+            cancel_counter_query = sql.SQL("""
+                            UPDATE teachers SET cnt_came=cnt_came+1 WHERE id=%s;
+                            """)
+            cursor.execute(cancel_counter_query, (id_teacher,))
+        else:
+            cancel_counter_query = sql.SQL("""
+                                        UPDATE teachers SET cnt_pass=cnt_pass+1 WHERE id=%s;
+                                        """)
+            cursor.execute(cancel_counter_query, (id_teacher,))
+
+        connection.commit()
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        return error
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+
+async def interview_marking_for_students(id_student: int, what: str) -> None:
+    connection = db_connection()
+    cursor = connection.cursor()
+
+    try:
+        if what == "came":
+            cancel_counter_query = sql.SQL("""
+                            UPDATE students SET cnt_came=cnt_came+1 WHERE id=%s;
+                            """)
+            cursor.execute(cancel_counter_query, (id_student,))
+        elif what == "passed":
+            cancel_counter_query = sql.SQL("""
+                            UPDATE students SET cnt_pass=cnt_pass+1 WHERE id=%s;
+                                        """)
+            cursor.execute(cancel_counter_query, (id_student,))
+        else:
+            cancel_counter_query = sql.SQL("""
+                            UPDATE students SET cnt_cancel=cnt_cancel+1 WHERE id=%s;
+                                                    """)
+            cursor.execute(cancel_counter_query, (id_student,))
+
         connection.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
