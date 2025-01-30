@@ -5,11 +5,10 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
 
 import teacher.model
-from db.db_teacher import check_id, add_user
+from db import db_teacher as db
 
 import teacher.registration.keyboard as kb
-# from main import dp
-from config import TOKEN_TG, dp, bot, router
+from config import dp
 from const import NoneData, YourData, YourForm
 from start import keyboard as kbs
 
@@ -41,7 +40,7 @@ async def do_text(state: FSMContext):
 
 @dp.callback_query(lambda c: c.data == "teacher")
 async def start_registration(call: CallbackQuery, state: FSMContext):
-    user, i = check_id(call.from_user.id)
+    user, i = db.check_id(call.from_user.id)
     if i == 0 or i == -1:
         await state.update_data(name=NoneData, grade=NoneData, sphere=NoneData, description=NoneData,
                                 call=call)
@@ -152,7 +151,7 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
         description=d,
         nickname=callback_query.from_user.username
     )
-    add_user(user)
+    db.add_user(user)
     await callback_query.message.edit_text(
         YourForm.format(user.name, user.grade, user.sphere, user.description),
         reply_markup=kbs.start_teacher_kb())

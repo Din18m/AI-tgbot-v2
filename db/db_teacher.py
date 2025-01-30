@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-
 import psycopg2
 from psycopg2 import sql
 
@@ -232,15 +231,22 @@ def get_all_window(id_teacher: int):
     cursor = connection.cursor()
     try:
         window = sql.SQL("""
-            SELECT time, description, id, id_student FROM windows WHERE id_teacher = %s
+SELECT w.time,
+       w.description,
+       w.id,
+       s.nickname
+FROM windows w
+JOIN students s
+ON w.id_student = s.id
+WHERE w.id_teacher = %s
+order by w.time;
             """)
         cursor.execute(window, (id_teacher,))
 
         rows = cursor.fetchall()
 
-        window = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
-
-        return window
+        windows = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
+        return windows
 
     except (Exception, psycopg2.DatabaseError) as error:
         return error
@@ -437,22 +443,6 @@ async def delete_all_window_requests(id_window: int):
             await notify.dislike(row[0], id_teacher, window)
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id_window,))
-        cnt_wind = get_cnt_windows(id_teacher)
-        if cnt_wind == 1:
-            update_query = sql.SQL("""
-                                        UPDATE teachers
-                                        SET cnt_window = %s, show = false
-                                        WHERE id = %s
-                                    """)
-        else:
-            update_query = sql.SQL("""
-                                        UPDATE teachers
-                                        SET cnt_window = %s, show = true
-                                        WHERE id = %s
-                                    """)
-        cursor.execute(update_query, (
-            cnt_wind - 1, id_teacher
-        ))
         cursor.connection.commit()
         return True
 
@@ -516,12 +506,6 @@ async def like_requests(id_request: int):
                                                 WHERE id = %s
                                             """)
             cursor.execute(update_query, (id_teacher,))
-
-        schedule.add_job(notify_before_interview(id_teacher, nickname_teacher, id_student, nickname_student, window),
-                         datetime=window["time"])
-
-        schedule.add_job(notify_after_interview(id_teacher, nickname_teacher, id_student, nickname_student, window),
-                         datetime=window["time"])
 
         cursor.connection.commit()
         return True
@@ -605,12 +589,34 @@ def delete_windows_expired():
     cursor = connection.cursor()
     try:
         request = sql.SQL("""
+                           SELECT 
+    id_teacher,
+    COUNT(*) AS expired_windows_count
+FROM windows 
+WHERE 
+    time AT TIME ZONE 'Europe/Moscow' < 
+    (NOW() AT TIME ZONE 'Europe/Moscow' - INTERVAL '2 hours')
+GROUP BY id_teacher;
+                           """)
+        cursor.execute(request)
+        rows = cursor.fetchall()
+
+        request = sql.SQL("""
                    DELETE FROM windows 
 WHERE 
     time AT TIME ZONE 'Europe/Moscow' <  -- Конвертируем хранимое время в тип с зоной
-    (NOW() AT TIME ZONE 'Europe/Moscow');
+    (NOW() AT TIME ZONE 'Europe/Moscow' - INTERVAL '2 hours');
                    """)
         cursor.execute(request)
+        for row in rows:
+            id_teacher = row[0]
+            if get_free_cnt_windows(id_teacher) - row[1] == 0:
+                update_query = sql.SQL("""
+                                                    UPDATE teachers
+                                                    SET show = false
+                                                    WHERE id = %s
+                                                """)
+                cursor.execute(update_query, (id_teacher,))
 
         cursor.connection.commit()
 

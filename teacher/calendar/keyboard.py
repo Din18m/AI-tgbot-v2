@@ -3,7 +3,6 @@
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from const import DayWeekRU, DayWeekEN
-from datetime import datetime, timedelta
 
 
 def setting_teacher() -> InlineKeyboardMarkup:
@@ -19,7 +18,7 @@ def setting_teacher() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="Удалить свободное окно", callback_data="delete_setting_teacher"),
         ],
         [
-            InlineKeyboardButton(text="Показать окно", callback_data="show_setting_teacher"),
+            InlineKeyboardButton(text="Показать окнa", callback_data="show_setting_teacher"),
         ],
         [
             InlineKeyboardButton(text="Вернуться", callback_data="start"),
@@ -76,9 +75,11 @@ def check() -> InlineKeyboardMarkup:
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
     return keyboard
+
+
 def sure() -> InlineKeyboardMarkup:
     kb = [
-        [InlineKeyboardButton(text="удалить", callback_data="delete_now_calendar_teacher" )],
+        [InlineKeyboardButton(text="удалить", callback_data="delete_now_calendar_teacher")],
         [InlineKeyboardButton(text="нет", callback_data="delete_setting_teacher")],
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb)
