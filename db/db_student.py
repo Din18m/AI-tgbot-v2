@@ -404,7 +404,7 @@ async def sign_up_student(id_student, id_teacher, id_window) -> None:
     cursor = connection.cursor()
 
     try:
-        check_query = sql.SQL("SELECT EXISTS (SELECT 1 FROM requests WHERE id_student==%s and id_teacher==%s and id_window==%s)")
+        check_query = sql.SQL("SELECT EXISTS (SELECT 1 FROM requests WHERE id_student=%s and id_teacher=%s and id_window=%s)")
         cursor.execute(check_query, (id_student, id_teacher, id_window,))
         exists = cursor.fetchone()[0]
         if exists:
