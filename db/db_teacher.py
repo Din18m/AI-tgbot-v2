@@ -258,7 +258,7 @@ order by w.time;
         rows = cursor.fetchall()
 
         window1 = [{"time": row[0], "description": row[1], "id": row[2], "student": None} for row in rows]
-        window += window1
+        windows += window1
         return windows
 
     except (Exception, psycopg2.DatabaseError) as error:
