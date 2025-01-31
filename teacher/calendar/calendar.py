@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 import db.db_teacher as db
 import teacher.calendar.keyboard as kb
 from config import dp
-from const import DayWeekEN
+from const import DayWeekEN, Windows
 
 
 class CalendarTeacher(StatesGroup):
@@ -23,7 +23,7 @@ class CalendarTeacher(StatesGroup):
 
 @dp.callback_query(lambda query: query.data == "setting_teacher")
 async def calendar(callback: CallbackQuery):
-    await callback.message.edit_text("Создать окно\nУдалить окно\nПросмотреть Окна\nНазад",
+    await callback.message.edit_text(Windows,
                                      reply_markup=kb.setting_teacher())
 
 
@@ -31,12 +31,12 @@ async def calendar(callback: CallbackQuery):
 async def create_setting_teacher(callback: CallbackQuery, state: FSMContext):
     cnt_windows = db.get_cnt_windows(callback.from_user.id)
     if cnt_windows == 8:
-        await callback.message.edit_text("у вас уже 8 окон\nСоздать окно\nУдалить окно\nПросмотреть Окна\nНазад",
+        await callback.message.edit_text(Windows,
                                          reply_markup=kb.setting_teacher())
         return
     await state.update_data(call=callback)
     await state.set_state(CalendarTeacher.wait)
-    await callback.message.edit_text("выберите в какой день провести собеседование",
+    await callback.message.edit_text("Выберите в какой день провести собеседование",
                                      reply_markup=kb.create_setting_teacher())
 
 
@@ -44,8 +44,7 @@ async def create_setting_teacher(callback: CallbackQuery, state: FSMContext):
 async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     windows = db.get_free_window(callback.from_user.id)
     if len(windows) == 0:
-        await callback.message.edit_text("у вас нет свободных окон для удаления\nСоздать окно\nУдалить "
-                                         "окно\nПросмотреть Окна\nНазад",
+        await callback.message.edit_text("У вас нет свободных окон для удаления\n\n" + Windows,
                                          reply_markup=kb.setting_teacher())
         return
     text = []
@@ -56,7 +55,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
             f"{i + 1}) {windows[i]["time"].strftime('%d.%m')} "
             f"{windows[i]["time"].strftime('%H:%M')} {windows[i]['description']}")
     await state.update_data(ids=ids, text=text)
-    await callback.message.edit_text("удалите свободные окна \n" + "\n".join(text),
+    await callback.message.edit_text("Удалите свободные окна \n" + "\n".join(text),
                                      reply_markup=kb.delete_setting_teacher(len(windows)))
 
 
@@ -67,7 +66,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     ids = info["ids"]
     text = info["text"]
     await state.update_data(delete=ids[int(id) - 1])
-    await callback.message.edit_text("Вы уверены что хотите удалить окно \n" + text[int(id) - 1],
+    await callback.message.edit_text("Вы уверены, что хотите удалить окно \n" + text[int(id) - 1],
                                      reply_markup=kb.sure())
 
 
@@ -78,8 +77,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
     await db.delete_window(delete)
     windows = db.get_free_window(callback.from_user.id)
     if len(windows) == 0:
-        await callback.message.edit_text("у вас нет свободных окон для удаления\nСоздать окно\nУдалить "
-                                         "окно\nПросмотреть Окна\nНазад",
+        await callback.message.edit_text("У вас нет свободных окон для удаления\n\n" + Windows,
                                          reply_markup=kb.setting_teacher())
         return
     text = []
@@ -98,8 +96,7 @@ async def delete_setting_teacher(callback: CallbackQuery, state: FSMContext):
 async def show_setting_teacher(callback: CallbackQuery):
     windows = db.get_all_window(callback.from_user.id)
     if len(windows) == 0:
-        await callback.message.edit_text("у вас нет окон\nСоздать окно\nУдалить "
-                                         "окно\nПросмотреть Окна\nНазад",
+        await callback.message.edit_text("У вас нет окон\n\n" + Windows,
                                          reply_markup=kb.setting_teacher())
         return
     text = []
@@ -114,7 +111,7 @@ async def show_setting_teacher(callback: CallbackQuery):
             text.append(
                 f"{i + 1}) {windows[i]["time"].strftime('%d.%m')} "
                 f"{windows[i]["time"].strftime('%H:%M')} {windows[i]['description']}")
-    await callback.message.edit_text("ваши окна \n" + "\n".join(text),
+    await callback.message.edit_text("Ваши окна \n" + "\n".join(text),
                                      reply_markup=kb.cancel_setting_teacher())
 
 
@@ -130,7 +127,7 @@ async def create_setting_teacher(callback: CallbackQuery, state: FSMContext):
     d1 = d1.strftime('%d.%m')
     d2 = d2.strftime('%d.%m')
     await state.update_data(d1=d1, d2=d2, y1=y1, y2=y2)
-    await callback.message.edit_text("выберите дату", reply_markup=kb.day_week(d1, d2))
+    await callback.message.edit_text("Выберите дату", reply_markup=kb.day_week(d1, d2))
 
 
 @dp.callback_query(lambda query: query.data.endswith("_day_teacher"))
@@ -220,7 +217,7 @@ async def time_teacher(message: Message, state: FSMContext):
             reply_markup=kb.check())
     except Exception:
         await call.message.edit_text(
-            text=f"превышение размера текста\n"
+            text=f"Превышение размера текста\n"
                  + f"Введите краткое (не более 23 символа) описание собеседования которое будет проведено {data} "
                    f"числа в {str(h).rjust(2, "0")}:{str(m).rjust(2, "0")}",
             reply_markup=kb.cancel_setting_teacher())
@@ -234,5 +231,5 @@ async def calendar(callback: CallbackQuery, state: FSMContext):
     await state.clear()
 
     db.add_new_window(callback.from_user.id, time, desc)
-    await callback.message.edit_text("окно успешно сохранено\n\nСоздать окно\nУдалить окно\nПросмотреть Окна\nНазад",
+    await callback.message.edit_text("Окно успешно сохранено\n\n" + Windows,
                                      reply_markup=kb.setting_teacher())

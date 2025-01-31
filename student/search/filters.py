@@ -12,9 +12,9 @@ from const import TEACHER_DATA_sign_up, TEACHER_DATA, FILTER_DATA
 from db.db_student import get_filter_teachers, get_all_teacher_windows, sign_up_student
 from student.search import keyboard as kb
 
-from config import dp, NoneData, bot
+from config import dp, bot
 from student.search.keyboard import fmaking_sure_kb
-
+from const import NoneData
 
 class Filters(StatesGroup):
     grade = State()

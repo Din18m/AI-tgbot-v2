@@ -15,21 +15,26 @@ async def dislike(id_student: int, window: dict):
              f"{window['description']} была отвергнута",
         reply_markup=kb_notify())
 
+
 async def before(id_student, nickname_student, id_teacher, nickname_teacher, window):
     datetime_obj = window['time']
     date = datetime_obj.strftime("%d.%m")
     time = datetime_obj.strftime("%H:%M")
     description = window['description']
-    await bot.send_message(chat_id=id_teacher, text=NOTIFY_TEXT.format(date, time, description, nickname_student), reply_markup=kb_notify())
-    await bot.send_message(chat_id=id_student, text=NOTIFY_TEXT.format(date, time, description, nickname_teacher), reply_markup=kb_notify())
+    await bot.send_message(chat_id=id_teacher, text=NOTIFY_TEXT.format(date, time, description, nickname_student),
+                           reply_markup=kb_notify())
+    await bot.send_message(chat_id=id_student, text=NOTIFY_TEXT.format(date, time, description, nickname_teacher),
+                           reply_markup=kb_notify())
 
 
 async def after(id_student, nickname_student, id_teacher, nickname_teacher, window):
     datetime_obj = window['time']
     date = datetime_obj.strftime("%d.%m")
     time = datetime_obj.strftime("%H:%M")
-    await bot.send_message(chat_id=id_teacher, text=NOTIFY_TEXT_after.format(date, time, nickname_student), reply_markup=teacher_marks_kb(id_student))
-    await bot.send_message(chat_id=id_student, text=NOTIFY_TEXT_after.format(date, time, nickname_teacher), reply_markup=student_marks_kb(id_teacher))
+    await bot.send_message(chat_id=id_teacher, text=NOTIFY_TEXT_after.format(date, time, nickname_student),
+                           reply_markup=teacher_marks_kb(id_student))
+    await bot.send_message(chat_id=id_student, text=NOTIFY_TEXT_after.format(date, time, nickname_teacher),
+                           reply_markup=student_marks_kb(id_teacher))
 
 
 async def like(id_student: int, id_teacher: int, window: dict, nickname_teacher: str, nickname_student: str):
@@ -67,6 +72,7 @@ def kb_notify():
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
+
 def teacher_marks_kb(id_student) -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(text="Собеседник пришел", callback_data=f"{id_student}_came_student_mark")],
@@ -74,6 +80,7 @@ def teacher_marks_kb(id_student) -> InlineKeyboardMarkup:
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
+
 
 def student_marks_kb(id_teacher) -> InlineKeyboardMarkup:
     buttons = [
