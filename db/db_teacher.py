@@ -604,13 +604,6 @@ GROUP BY id_teacher;
         cursor.execute(request)
         rows = cursor.fetchall()
 
-        request = sql.SQL("""
-                   DELETE FROM windows 
-WHERE 
-    time AT TIME ZONE 'Europe/Moscow' <  -- Конвертируем хранимое время в тип с зоной
-    (NOW() AT TIME ZONE 'Europe/Moscow' - INTERVAL '2 hours');
-                   """)
-        cursor.execute(request)
         for row in rows:
             id_teacher = row[0]
             if get_free_cnt_windows(id_teacher) - row[1] == 0:
@@ -621,8 +614,19 @@ WHERE
                                                 """)
                 cursor.execute(update_query, (id_teacher,))
 
-        cursor.connection.commit()
+        request = sql.SQL("""
+                   DELETE FROM windows 
+WHERE 
+    time AT TIME ZONE 'Europe/Moscow' <  -- Конвертируем хранимое время в тип с зоной
+    (NOW() AT TIME ZONE 'Europe/Moscow' - INTERVAL '2 hours') returning id;
+                   """)
+        cursor.execute(request)
+        rows = cursor.fetchall()
+        for row in rows:
+            delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
+            cursor.execute(delete_query, (row[0],))
 
+        cursor.connection.commit()
     except (Exception, psycopg2.DatabaseError) as error:
         return error
     finally:
