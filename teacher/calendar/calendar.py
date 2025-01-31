@@ -31,7 +31,7 @@ async def calendar(callback: CallbackQuery):
 async def create_setting_teacher(callback: CallbackQuery, state: FSMContext):
     cnt_windows = db.get_cnt_windows(callback.from_user.id)
     if cnt_windows == 8:
-        await callback.message.edit_text(Windows,
+        await callback.message.edit_text("У вас уже 8 окон " + Windows,
                                          reply_markup=kb.setting_teacher())
         return
     await state.update_data(call=callback)

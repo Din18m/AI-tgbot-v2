@@ -251,6 +251,7 @@ order by w.time;
                w.id
         FROM windows w
         WHERE w.id_teacher = %s
+        AND id_student is NULL
         order by w.time;
                     """)
         cursor.execute(window, (id_teacher,))
