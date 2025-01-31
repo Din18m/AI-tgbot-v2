@@ -244,6 +244,21 @@ order by w.time;
         rows = cursor.fetchall()
 
         windows = [{"time": row[0], "description": row[1], "id": row[2], "student": row[3]} for row in rows]
+
+        window = sql.SQL("""
+        SELECT w.time,
+               w.description,
+               w.id
+        FROM windows w
+        WHERE w.id_teacher = %s
+        order by w.time;
+                    """)
+        cursor.execute(window, (id_teacher,))
+
+        rows = cursor.fetchall()
+
+        window1 = [{"time": row[0], "description": row[1], "id": row[2], "student": None} for row in rows]
+        window += window1
         return windows
 
     except (Exception, psycopg2.DatabaseError) as error:
