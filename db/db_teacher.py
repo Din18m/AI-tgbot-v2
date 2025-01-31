@@ -293,8 +293,6 @@ async def delete_window(id: int):
         rows = cursor.fetchall()
         for row in rows:
             await notify.dislike(row[0], window)
-
-        id_teacher = cursor.fetchone()[0]
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id,))
         cnt_wind = get_cnt_windows(id_teacher)
