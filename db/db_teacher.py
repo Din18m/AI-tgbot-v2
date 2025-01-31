@@ -250,7 +250,7 @@ order by w.time;
                w.description,
                w.id
         FROM windows w
-        WHERE w.id_teacher = %s
+        WHERE w.id_teacher = %s and id_student IS NULL
         order by w.time;
                     """)
         cursor.execute(window, (id_teacher,))
@@ -292,13 +292,13 @@ async def delete_window(id: int):
         cursor.execute(window_query, (id,))
         rows = cursor.fetchall()
         for row in rows:
-            await notify.dislike(row[0], id_teacher, window)
+            await notify.dislike(row[0], window)
 
         id_teacher = cursor.fetchone()[0]
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id,))
         cnt_wind = get_cnt_windows(id_teacher)
-        if cnt_wind == 1:
+        if get_free_cnt_windows(id_teacher) == 1:
             update_query = sql.SQL("""
                                     UPDATE teachers
                                     SET cnt_window = %s, show = false
