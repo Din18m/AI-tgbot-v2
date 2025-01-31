@@ -3,6 +3,7 @@
 """
 import asyncio
 import logging
+from datetime import datetime
 
 import db.migration
 from config import dp, bot, schedule
@@ -20,11 +21,24 @@ import teacher.calendar.calendar
 import teacher.requests.requests
 
 import start.start
+from general_notices import delete_windows_expired, say_about_requests
 
 logging.basicConfig(level=logging.DEBUG)
 
 
 async def main():
+    schedule.add_job(
+        delete_windows_expired,
+        'cron',
+        hour=18, minute=00
+    )
+
+    schedule.add_job(
+        say_about_requests,
+        'cron',
+        hour=18, minute=00
+    )
+
     schedule.start()
     await dp.start_polling(bot)
 
