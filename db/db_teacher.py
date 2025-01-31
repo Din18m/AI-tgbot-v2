@@ -347,7 +347,7 @@ async def get_requests(id_teacher: int):
             window = {"id": row[0], "time": row[1], "description": row[2], "student": row[3]}
             elem["window"] = window
             if window["student"] is not None and window["student"] != elem["student"]:
-                await notify.dislike(elem["student"], id_teacher, window)
+                await notify.dislike(elem["student"], window)
                 continue
             if window["student"] == elem["student"]:
                 continue
@@ -449,7 +449,7 @@ async def delete_all_window_requests(id_window: int):
         cursor.execute(window_query, (id_window,))
         rows = cursor.fetchall()
         for row in rows:
-            await notify.dislike(row[0], id_teacher, window)
+            await notify.dislike(row[0], window)
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id_window,))
         cursor.connection.commit()
@@ -517,7 +517,7 @@ async def like_requests(id_request: int):
         rows = cursor.fetchall()
         print(rows)
         for row in rows:
-            await notify.dislike(row[0], id_teacher, window)
+            await notify.dislike(row[0], window)
         delete_query = sql.SQL("""DELETE from requests WHERE id_window = %s""")
         cursor.execute(delete_query, (id_window,))
 
