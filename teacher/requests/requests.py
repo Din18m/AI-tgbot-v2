@@ -175,12 +175,7 @@ async def my_students_teacher(callback: CallbackQuery, state: FSMContext):
     new_id = id
     request = requests[id]
     await db.delete_one_dislike_requests(request["id"])
-    flag = db.check_exist_request(requests[id]["id"])
     new_requests = requests[:id]
-    if flag:
-        new_requests.append(requests[id])
-    else:
-        new_id -= 1
     for i in range(id + 1, len(requests)):
         if db.check_exist_request(requests[i]["id"]):
             new_requests += (requests[i:])
@@ -191,10 +186,10 @@ async def my_students_teacher(callback: CallbackQuery, state: FSMContext):
                                          const.YourForm.format(user.name, user.grade, user.sphere, user.description),
                                          reply_markup=kbs.start_teacher_kb())
         return
-    new_id += 1
     if new_id == len(new_requests):
         new_id = 0
     request = new_requests[new_id]
+
     await state.update_data(requests=new_requests, id=new_id)
     window = request["window"]
     student = request["student"]

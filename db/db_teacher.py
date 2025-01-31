@@ -407,7 +407,7 @@ async def delete_one_dislike_requests(id_request: int):
         id_student = row[0]
         id_window = row[1]
         window_query = sql.SQL("""
-                                   SELECT id, time, description, id_student, id_teacher FROM windows WHERE id = %s
+                                   SELECT id, time, description, id_student FROM windows WHERE id = %s
                                    """)
         cursor.execute(window_query, (id_window,))
 
@@ -415,9 +415,7 @@ async def delete_one_dislike_requests(id_request: int):
 
         window = {"id": row[0], "time": row[1], "description": row[2], "student": row[3]}
 
-        id_teacher = row[4]
-
-        await notify.dislike(id_student, id_teacher, window)
+        await notify.dislike(id_student, window)
         delete_query = sql.SQL("""DELETE from requests WHERE id = %s""")
         cursor.execute(delete_query, (id_request,))
         cursor.connection.commit()
